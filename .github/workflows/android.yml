@@ -47,3 +47,5 @@ jobs:
         with:
           name: NZT365-v1.3.0
           path: NZT365-v1.3.0.apk
+
+# v1.3 full integration validation

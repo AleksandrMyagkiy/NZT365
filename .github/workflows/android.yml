@@ -1,4 +1,4 @@
-name: Build NZT365 APK
+name: Build NZT365 Release APK
 
 on:
   workflow_dispatch:
@@ -26,9 +26,20 @@ jobs:
       - run: yes | sdkmanager --licenses >/dev/null
       - run: sdkmanager "platforms;android-35" "build-tools;35.0.0"
 
-      - run: gradle :app:assembleDebug --stacktrace
+      - name: Restore release keystore
+        shell: bash
+        run: |
+          echo "${{ secrets.NZT_KEYSTORE }}" | base64 --decode > "$RUNNER_TEMP/nzt365-release.jks"
+
+      - name: Build release APK
+        env:
+          NZT_KEYSTORE_FILE: ${{ runner.temp }}/nzt365-release.jks
+          NZT_KEYSTORE_PASSWORD: ${{ secrets.NZT_KEYSTORE_PASSWORD }}
+          NZT_KEY_ALIAS: ${{ secrets.NZT_KEY_ALIAS }}
+          NZT_KEY_PASSWORD: ${{ secrets.NZT_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --stacktrace
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-debug-apk
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: NZT365-release-apk
+          path: app/build/outputs/apk/release/app-release.apk

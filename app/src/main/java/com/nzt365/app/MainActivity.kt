@@ -979,6 +979,13 @@ fun GrowthScreen(
                 Arrangement.spacedBy(12.dp)
         ) {
             item {
+    Text(
+        text = "BOOKS 12/12 • v1.1.1",
+        color = Accent,
+        fontWeight = FontWeight.Bold
+    )
+}
+            item {
     BooksSection()
 }
             item {

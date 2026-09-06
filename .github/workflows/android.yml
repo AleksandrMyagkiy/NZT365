@@ -39,7 +39,11 @@ jobs:
           NZT_KEY_PASSWORD: ${{ secrets.NZT_KEY_PASSWORD }}
         run: gradle :app:assembleRelease --stacktrace
 
+      - name: Rename APK
+        run: |
+          cp app/build/outputs/apk/release/app-release.apk NZT365-v1.1.1.apk
+
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-release-apk
-          path: app/build/outputs/apk/release/app-release.apk
+          name: NZT365-v1.1.1
+          path: NZT365-v1.1.1.apk

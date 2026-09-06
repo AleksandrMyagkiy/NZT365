@@ -730,7 +730,13 @@ fun BodyScreen(
             verticalArrangement =
                 Arrangement.spacedBy(12.dp)
         ) {
+            item {
+                   StathamBodyModule()
+         }
 
+           item {
+                  StathamNutritionModule()
+         }
             item {
 
                 SectionTitle(

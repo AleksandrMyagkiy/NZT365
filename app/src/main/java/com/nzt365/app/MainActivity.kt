@@ -296,6 +296,13 @@ fun TodayScreen(
 
                 ScoreCard(score)
             }
+            item {
+    StathamTodayCard()
+}
+
+item {
+    NZTHabitsModule()
+}
 
             item {
 

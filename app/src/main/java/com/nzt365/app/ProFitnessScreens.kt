@@ -4,13 +4,15 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -20,6 +22,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -42,57 +45,59 @@ private data class ProExercise(
 private data class AltWorkout(
     val id: String,
     val titleKey: String,
-    val icon: String,
+    val code: String,
     val minutes: Int,
     val exercises: List<ProExercise>
 )
 
 private val alternateWorkouts = listOf(
     AltWorkout("home", "home", "HOME", 42, listOf(
-        ProExercise("Push-up", 4, "8–15", 75, "Body in one line; elbows 30–60°.", "15×4 twice → harder variation or band."),
-        ProExercise("Split squat", 4, "8–12 / leg", 75, "Stable front foot; knee follows toes.", "12×4 → Bulgarian split squat or added load."),
-        ProExercise("Band row", 4, "10–15", 75, "Shoulders down, squeeze shoulder blades.", "15×4 → stronger band."),
-        ProExercise("Plank", 3, "30–60 sec", 45, "Ribs down, glutes active.", "60 sec → harder plank variation.")
+        ProExercise("Push-up", 4, "8-15", 75, "Keep the body in one line and lower under control.", "When 4 x 15 is comfortable, use a harder variation or resistance band."),
+        ProExercise("Split squat", 4, "8-12 / leg", 75, "Stable front foot, controlled knee path and full balance.", "At 4 x 12, move to Bulgarian split squat or add load."),
+        ProExercise("Band row", 4, "10-15", 75, "Keep shoulders down and squeeze shoulder blades.", "At 4 x 15, increase band resistance."),
+        ProExercise("Plank", 3, "30-60 sec", 45, "Ribs down, glutes active, no lumbar sag.", "At 60 sec, switch to a harder plank variation.")
     )),
     AltWorkout("bars", "pullup_bars", "BARS", 50, listOf(
-        ProExercise("Pull-up", 5, "4–10", 120, "Full controlled range, no neck reach.", "10×5 → add weight or reduce assistance."),
-        ProExercise("Dip", 4, "6–12", 100, "Shoulders stable; descend only pain-free.", "12×4 → add load."),
-        ProExercise("Hanging knee raise", 4, "8–15", 75, "Posterior pelvic tilt, no swing.", "15×4 → straight-leg raise."),
-        ProExercise("Australian row", 4, "8–15", 75, "Chest to bar, body rigid.", "15×4 → feet higher.")
+        ProExercise("Pull-up", 5, "4-10", 120, "Use a full controlled range and avoid reaching with the neck.", "At 5 x 10, add weight or reduce assistance."),
+        ProExercise("Dip", 4, "6-12", 100, "Keep shoulders stable and stay in a pain-free range.", "At 4 x 12, add external load."),
+        ProExercise("Hanging knee raise", 4, "8-15", 75, "Control the pelvis and avoid swinging.", "At 4 x 15, progress to straight-leg raise."),
+        ProExercise("Australian row", 4, "8-15", 75, "Chest toward the bar, body rigid.", "At 4 x 15, raise the feet.")
     )),
     AltWorkout("dumbbells", "dumbbells", "DB", 55, listOf(
-        ProExercise("Dumbbell floor press", 4, "8–12", 90, "Shoulders packed, controlled eccentric.", "12×4 → +1–2 kg per dumbbell."),
-        ProExercise("One-arm dumbbell row", 4, "8–12 / side", 90, "Keep torso square.", "12×4 → +1–2 kg."),
-        ProExercise("Goblet squat", 4, "8–15", 90, "Brace and keep full foot pressure.", "15×4 → heavier dumbbell."),
-        ProExercise("Dumbbell curl", 3, "10–15", 60, "No shoulder swing.", "15×3 → +1 kg.")
+        ProExercise("Dumbbell floor press", 4, "8-12", 90, "Pack the shoulders and control the eccentric phase.", "At 4 x 12, add 1-2 kg per dumbbell."),
+        ProExercise("One-arm dumbbell row", 4, "8-12 / side", 90, "Keep the torso square and pull toward the hip.", "At 4 x 12, add 1-2 kg."),
+        ProExercise("Goblet squat", 4, "8-15", 90, "Brace, keep whole-foot pressure and controlled depth.", "At 4 x 15, use a heavier dumbbell."),
+        ProExercise("Dumbbell curl", 3, "10-15", 60, "Keep upper arm quiet and avoid body swing.", "At 3 x 15, add 1 kg.")
     )),
     AltWorkout("barbell", "barbell", "BB", 60, listOf(
-        ProExercise("Barbell squat", 4, "5–8", 150, "Brace, controlled depth, knees track toes.", "8×4 with RIR 2 → +2.5 kg."),
-        ProExercise("Bench press", 4, "5–8", 150, "Stable upper back and leg drive.", "8×4 with RIR 2 → +2.5 kg."),
-        ProExercise("Barbell row", 4, "6–10", 120, "Neutral spine, pull to lower ribs.", "10×4 → +2.5 kg."),
-        ProExercise("Romanian deadlift", 3, "6–10", 150, "Hips back, bar close to legs.", "10×3 → +2.5–5 kg.")
+        ProExercise("Barbell squat", 4, "5-8", 150, "Brace hard, use controlled depth and stable knee tracking.", "At 4 x 8 with 2 RIR, add 2.5 kg."),
+        ProExercise("Bench press", 4, "5-8", 150, "Stable upper back, controlled touch and leg drive.", "At 4 x 8 with 2 RIR, add 2.5 kg."),
+        ProExercise("Barbell row", 4, "6-10", 120, "Neutral spine and pull to the lower ribs.", "At 4 x 10, add 2.5 kg."),
+        ProExercise("Romanian deadlift", 3, "6-10", 150, "Push hips back and keep the bar close to the legs.", "At 3 x 10, add 2.5-5 kg.")
     )),
     AltWorkout("run", "running", "RUN", 40, listOf(
-        ProExercise("Easy run", 1, "30 min Z2", 0, "Conversational pace, smooth cadence.", "Add 5 minutes when recovery is good."),
-        ProExercise("Strides", 6, "20 sec", 60, "Fast but relaxed, full recovery.", "Add 1 rep up to 8."),
-        ProExercise("Cooldown walk", 1, "5–10 min", 0, "Breathe down gradually.", "Keep easy.")
+        ProExercise("Easy run", 1, "30 min Z2", 0, "Use conversational pace and relaxed cadence.", "Add 5 minutes when recovery is good."),
+        ProExercise("Strides", 6, "20 sec", 60, "Fast but relaxed with full recovery.", "Add one repetition up to 8."),
+        ProExercise("Cooldown walk", 1, "5-10 min", 0, "Bring breathing down gradually.", "Keep this easy.")
     )),
     AltWorkout("bike", "cycling", "BIKE", 55, listOf(
-        ProExercise("Cycling Z2", 1, "45–60 min", 0, "Steady aerobic pace.", "Add 5–10 min, then small power increase."),
-        ProExercise("High cadence", 5, "60 sec", 60, "Smooth 100–110 rpm, no bouncing.", "Add one interval when easy.")
+        ProExercise("Cycling Z2", 1, "45-60 min", 0, "Steady aerobic pace with smooth pedaling.", "Add 5-10 minutes before increasing intensity."),
+        ProExercise("High cadence", 5, "60 sec", 60, "Ride 100-110 rpm without bouncing.", "Add one interval when all reps feel controlled.")
     )),
     AltWorkout("mobility", "mobility", "MOB", 30, listOf(
-        ProExercise("Mobility flow", 1, "12 min", 0, "Pain-free controlled range.", "Improve range, not intensity."),
-        ProExercise("Dead bug", 3, "8–10 / side", 45, "Low back gently supported.", "Longer lever or slower tempo."),
-        ProExercise("Bird-dog", 3, "8 / side", 45, "Keep pelvis square.", "3-sec pauses.")
+        ProExercise("Mobility flow", 1, "12 min", 0, "Use a pain-free controlled range.", "Progress range and control, not intensity."),
+        ProExercise("Dead bug", 3, "8-10 / side", 45, "Keep the lower back gently supported.", "Use a longer lever or slower tempo."),
+        ProExercise("Bird-dog", 3, "8 / side", 45, "Keep the pelvis square.", "Add 3-second pauses.")
     ))
 )
 
 private class ProFitStore(context: Context) {
-    private val p = context.getSharedPreferences("nzt_fit_v2", Context.MODE_PRIVATE)
+    private val p = context.getSharedPreferences("nzt_fit_v21", Context.MODE_PRIVATE)
 
     fun replacement(date: LocalDate): String? = p.getString("replacement_$date", null)
-    fun setReplacement(date: LocalDate, id: String?) = p.edit().apply { if (id == null) remove("replacement_$date") else putString("replacement_$date", id) }.apply()
+    fun setReplacement(date: LocalDate, id: String?) = p.edit().apply {
+        if (id == null) remove("replacement_$date") else putString("replacement_$date", id)
+    }.apply()
 
     fun done(date: LocalDate, workoutId: String, ex: Int): Int = p.getInt("done_${date}_${workoutId}_$ex", 0)
     fun setDone(date: LocalDate, workoutId: String, ex: Int, value: Int) = p.edit().putInt("done_${date}_${workoutId}_$ex", value).apply()
@@ -106,11 +111,16 @@ private class ProFitStore(context: Context) {
     fun extraSets(name: String): Int = p.getInt("extra_${name.hashCode()}", 0)
     fun setExtraSets(name: String, value: Int) = p.edit().putInt("extra_${name.hashCode()}", value.coerceIn(0, 3)).apply()
 
+    fun rir(name: String): Int = p.getInt("rir_${name.hashCode()}", 2)
+    fun setRir(name: String, value: Int) = p.edit().putInt("rir_${name.hashCode()}", value.coerceIn(0, 5)).apply()
+
     fun successCount(name: String): Int = p.getInt("success_${name.hashCode()}", 0)
-    fun setSuccessCount(name: String, value: Int) = p.edit().putInt("success_${name.hashCode()}", value).apply()
+    fun setSuccessCount(name: String, value: Int) = p.edit().putInt("success_${name.hashCode()}", value.coerceAtLeast(0)).apply()
+
+    fun bestLoad(name: String): Double = p.getFloat("best_${name.hashCode()}", 0f).toDouble()
+    fun setBestLoad(name: String, value: Double) = p.edit().putFloat("best_${name.hashCode()}", value.toFloat()).apply()
 
     fun markWorkout(date: LocalDate, id: String) = p.edit().putBoolean("workout_${date}_$id", true).apply()
-    fun workoutsCompleted(): Int = p.all.keys.count { it.startsWith("workout_") && p.getBoolean(it, false) }
 }
 
 class ProWorkoutActivity : ComponentActivity() {
@@ -137,7 +147,9 @@ private fun ProWorkoutScreen(date: LocalDate, onClose: () -> Unit) {
     val workoutId = alt?.id ?: original.session.code
     val title = alt?.let { l.t(it.titleKey) } ?: original.session.title
     val minutes = alt?.minutes ?: original.session.minutes
-    val sourceExercises = alt?.exercises ?: original.session.exercises.map { ProExercise(it.name, it.sets, it.target, it.restSeconds, it.technique, it.progression) }
+    val exercises = alt?.exercises ?: original.session.exercises.map {
+        ProExercise(it.name, it.sets, it.target, it.restSeconds, it.technique, it.progression)
+    }
 
     var refresh by remember { mutableIntStateOf(0) }
     var restSeconds by remember { mutableIntStateOf(0) }
@@ -148,53 +160,66 @@ private fun ProWorkoutScreen(date: LocalDate, onClose: () -> Unit) {
         if (restRunning && restSeconds > 0) {
             delay(1000)
             restSeconds--
-        } else if (restRunning && restSeconds <= 0) restRunning = false
+        } else if (restRunning && restSeconds <= 0) {
+            restRunning = false
+        }
     }
 
-    val totalSets = sourceExercises.sumOf { it.sets + store.extraSets(it.name) }
-    val doneSets = sourceExercises.indices.sumOf { i -> store.done(date, workoutId, i).coerceAtMost(sourceExercises[i].sets + store.extraSets(sourceExercises[i].name)) }
+    val totalSets = exercises.sumOf { it.sets + store.extraSets(it.name) }
+    val doneSets = exercises.indices.sumOf { i ->
+        store.done(date, workoutId, i).coerceAtMost(exercises[i].sets + store.extraSets(exercises[i].name))
+    }
     val pct = if (totalSets == 0) 0f else doneSets.toFloat() / totalSets
 
     Scaffold(
         containerColor = NztBg,
         topBar = {
             Surface(color = NztBg) {
-                Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     IconButton(onClick = onClose) { Icon(Icons.Default.Close, null) }
                     Column(Modifier.weight(1f)) {
-                        Text("STATHAM / NZT", color = NztAccent, fontSize = 11.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
-                        Text(title, fontSize = 20.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text("NZT TRAINING", color = NztAccent, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
+                        Text(title, fontSize = 19.sp, fontWeight = FontWeight.Black, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
-                    Text("$doneSets/$totalSets", color = NztAccent, fontWeight = FontWeight.Bold)
+                    Surface(color = NztSurface2, shape = RoundedCornerShape(12.dp)) {
+                        Text("$doneSets/$totalSets", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = NztAccent, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         },
         bottomBar = {
             Surface(color = Color(0xFF09131C)) {
-                Column(Modifier.padding(14.dp)) {
+                Column(Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 10.dp)) {
                     LinearProgressIndicator(progress = { pct }, modifier = Modifier.fillMaxWidth().height(5.dp), color = NztAccent, trackColor = NztLine)
-                    Spacer(Modifier.height(10.dp))
-                    Button(onClick = { showFinish = true }, modifier = Modifier.fillMaxWidth().height(54.dp), shape = RoundedCornerShape(16.dp)) { Text(l.t("finish"), fontWeight = FontWeight.Bold) }
+                    Spacer(Modifier.height(8.dp))
+                    Button(
+                        onClick = { showFinish = true },
+                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        shape = RoundedCornerShape(16.dp)
+                    ) { Text(l.t("finish"), fontWeight = FontWeight.Bold) }
                 }
             }
         }
     ) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+        androidx.compose.foundation.lazy.LazyColumn(
+            modifier = Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
             item {
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    MetricChip(Icons.Default.Timer, "$minutes min", Modifier.weight(1f))
-                    MetricChip(Icons.Default.FitnessCenter, "$totalSets ${l.t("sets")}", Modifier.weight(1f))
-                    MetricChip(Icons.Default.TrendingUp, "${(pct * 100).roundToInt()}%", Modifier.weight(1f))
-                }
+                ResponsiveWorkoutMetrics(minutes, totalSets, (pct * 100).roundToInt(), l)
             }
-            itemsIndexed(sourceExercises) { index, ex ->
-                ExerciseWorkCard(ex, date, workoutId, index, store, refresh) { seconds ->
+            items(exercises.size) { index ->
+                ExerciseWorkCard(exercises[index], date, workoutId, index, store, refresh) { seconds ->
                     restSeconds = seconds
                     restRunning = seconds > 0
                     refresh++
                 }
             }
-            item { Spacer(Modifier.height(20.dp)) }
+            item { Spacer(Modifier.height(16.dp)) }
         }
     }
 
@@ -202,13 +227,13 @@ private fun ProWorkoutScreen(date: LocalDate, onClose: () -> Unit) {
         ModalBottomSheet(onDismissRequest = { restRunning = false }, containerColor = NztSurface) {
             Column(Modifier.fillMaxWidth().padding(24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(l.t("timer"), color = NztMuted, fontWeight = FontWeight.Bold)
-                Text("$restSeconds", fontSize = 64.sp, fontWeight = FontWeight.Black, color = NztAccent)
-                Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                    OutlinedButton(onClick = { restSeconds = (restSeconds - 15).coerceAtLeast(0) }) { Text("−15") }
-                    OutlinedButton(onClick = { restSeconds += 15 }) { Text("+15") }
-                    Button(onClick = { restRunning = false }) { Text(l.t("skip")) }
+                Text(restSeconds.toString(), fontSize = 62.sp, fontWeight = FontWeight.Black, color = NztAccent)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    SmallActionButton("-15", Modifier.weight(1f)) { restSeconds = (restSeconds - 15).coerceAtLeast(0) }
+                    SmallActionButton("+15", Modifier.weight(1f)) { restSeconds += 15 }
+                    Button(onClick = { restRunning = false }, modifier = Modifier.weight(1f)) { Text(l.t("skip"), maxLines = 1) }
                 }
-                Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(20.dp))
             }
         }
     }
@@ -217,20 +242,23 @@ private fun ProWorkoutScreen(date: LocalDate, onClose: () -> Unit) {
         AlertDialog(
             onDismissRequest = { showFinish = false },
             title = { Text(l.t("finish")) },
-            text = { Text("$doneSets / $totalSets ${l.t("sets")} • ${(pct*100).roundToInt()}%") },
+            text = { Text("$doneSets / $totalSets ${l.t("sets")} - ${(pct * 100).roundToInt()}%") },
             confirmButton = {
                 Button(onClick = {
-                    sourceExercises.forEachIndexed { index, ex ->
+                    exercises.forEachIndexed { index, ex ->
                         val prescribed = ex.sets + store.extraSets(ex.name)
                         val done = store.done(date, workoutId, index)
                         if (done >= prescribed && prescribed > 0) {
+                            val currentLoad = store.load(ex.name)
+                            if (currentLoad > store.bestLoad(ex.name)) store.setBestLoad(ex.name, currentLoad)
                             val success = store.successCount(ex.name) + 1
-                            if (success >= 2) {
-                                val currentLoad = store.load(ex.name)
-                                if (currentLoad > 0) store.setLoad(ex.name, currentLoad + 1.0)
+                            if (success >= 2 && store.rir(ex.name) >= 2) {
+                                if (currentLoad > 0) store.setLoad(ex.name, currentLoad + 0.5)
                                 else store.setLevel(ex.name, store.level(ex.name) + 1)
                                 store.setSuccessCount(ex.name, 0)
-                            } else store.setSuccessCount(ex.name, success)
+                            } else {
+                                store.setSuccessCount(ex.name, success)
+                            }
                         }
                     }
                     store.markWorkout(date, workoutId)
@@ -243,41 +271,82 @@ private fun ProWorkoutScreen(date: LocalDate, onClose: () -> Unit) {
 }
 
 @Composable
-private fun ExerciseWorkCard(ex: ProExercise, date: LocalDate, workoutId: String, index: Int, store: ProFitStore, refresh: Int, onSetDone: (Int) -> Unit) {
+private fun ResponsiveWorkoutMetrics(minutes: Int, totalSets: Int, percent: Int, l: Localizer) {
+    BoxWithConstraints(Modifier.fillMaxWidth()) {
+        if (maxWidth < 350.dp) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricChip(Icons.Default.Timer, "$minutes min", Modifier.fillMaxWidth())
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MetricChip(Icons.Default.FitnessCenter, "$totalSets ${l.t("sets")}", Modifier.weight(1f))
+                    MetricChip(Icons.Default.TrendingUp, "$percent%", Modifier.weight(1f))
+                }
+            }
+        } else {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                MetricChip(Icons.Default.Timer, "$minutes min", Modifier.weight(1f))
+                MetricChip(Icons.Default.FitnessCenter, "$totalSets ${l.t("sets")}", Modifier.weight(1f))
+                MetricChip(Icons.Default.TrendingUp, "$percent%", Modifier.weight(1f))
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExerciseWorkCard(
+    ex: ProExercise,
+    date: LocalDate,
+    workoutId: String,
+    index: Int,
+    store: ProFitStore,
+    refresh: Int,
+    onSetDone: (Int) -> Unit
+) {
     val l = rememberLocalizer()
     var load by remember(refresh, ex.name) { mutableStateOf(store.load(ex.name)) }
     var level by remember(refresh, ex.name) { mutableIntStateOf(store.level(ex.name)) }
     var extra by remember(refresh, ex.name) { mutableIntStateOf(store.extraSets(ex.name)) }
+    var rir by remember(refresh, ex.name) { mutableIntStateOf(store.rir(ex.name)) }
     var expanded by remember { mutableStateOf(false) }
     val prescribed = ex.sets + extra
-    var done by remember(refresh, date, workoutId, index) { mutableIntStateOf(store.done(date, workoutId, index).coerceAtMost(prescribed)) }
+    var done by remember(refresh, date, workoutId, index) {
+        mutableIntStateOf(store.done(date, workoutId, index).coerceAtMost(prescribed))
+    }
+    val best = store.bestLoad(ex.name)
 
-    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(24.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                ExerciseIllustration(ex.name, Modifier.size(112.dp))
-                Spacer(Modifier.width(14.dp))
-                Column(Modifier.weight(1f)) {
-                    Text(ex.name, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                    Text("$prescribed ${l.t("sets")} • ${ex.target} • ${l.t("rest")} ${ex.rest}s", color = NztMuted, fontSize = 12.sp)
-                    Spacer(Modifier.height(7.dp))
-                    Surface(color = NztSurface2, shape = RoundedCornerShape(10.dp)) {
-                        Text(if (load > 0) "${l.t("load")}: ${formatLoad(load)} kg" else "${l.t("level")}: $level", Modifier.padding(horizontal = 9.dp, vertical = 5.dp), color = NztAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(22.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+            BoxWithConstraints(Modifier.fillMaxWidth()) {
+                if (maxWidth < 340.dp) {
+                    Column {
+                        ExerciseIllustration(ex.name, Modifier.fillMaxWidth().height(150.dp))
+                        Spacer(Modifier.height(12.dp))
+                        ExerciseHeaderText(ex, prescribed, load, level, best, l)
+                    }
+                } else {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        ExerciseIllustration(ex.name, Modifier.size(94.dp))
+                        Spacer(Modifier.width(12.dp))
+                        Column(Modifier.weight(1f)) { ExerciseHeaderText(ex, prescribed, load, level, best, l) }
                     }
                 }
             }
-            Spacer(Modifier.height(14.dp))
+
+            Spacer(Modifier.height(12.dp))
             Text(ex.technique, color = NztMuted, fontSize = 13.sp, lineHeight = 19.sp)
             TextButton(onClick = { expanded = !expanded }, contentPadding = PaddingValues(0.dp)) {
-                Text(if (expanded) "− ${l.t("progression")}" else "+ ${l.t("progression")}")
+                Text(if (expanded) l.t("progression") else "+ ${l.t("progression")}")
             }
-            if (expanded) Text(ex.progression, color = NztAccent, fontSize = 13.sp, lineHeight = 19.sp)
+            if (expanded) {
+                Surface(color = NztSurface2, shape = RoundedCornerShape(12.dp)) {
+                    Text(ex.progression, Modifier.fillMaxWidth().padding(10.dp), color = NztAccent, fontSize = 13.sp, lineHeight = 18.sp)
+                }
+            }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(Modifier.height(10.dp))
             Text(l.t("sets").uppercase(), color = NztMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
-                repeat(prescribed.coerceAtMost(6)) { setIndex ->
+            Spacer(Modifier.height(7.dp))
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                repeat(prescribed.coerceAtMost(8)) { setIndex ->
                     val completed = setIndex < done
                     FilledIconButton(
                         onClick = {
@@ -285,28 +354,120 @@ private fun ExerciseWorkCard(ex: ProExercise, date: LocalDate, workoutId: String
                             store.setDone(date, workoutId, index, done)
                             if (!completed && setIndex < done) onSetDone(ex.rest)
                         },
-                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = if (completed) NztAccent else NztSurface2, contentColor = if (completed) Color.Black else NztText)
-                    ) { Text("${setIndex + 1}", fontWeight = FontWeight.Bold) }
+                        modifier = Modifier.size(44.dp),
+                        colors = IconButtonDefaults.filledIconButtonColors(
+                            containerColor = if (completed) NztAccent else NztSurface2,
+                            contentColor = if (completed) Color.Black else NztText
+                        )
+                    ) { Text((setIndex + 1).toString(), fontWeight = FontWeight.Bold) }
                 }
             }
 
             Spacer(Modifier.height(12.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { extra = (extra - 1).coerceAtLeast(0); store.setExtraSets(ex.name, extra) }, enabled = extra > 0, modifier = Modifier.weight(1f)) { Text("− ${l.t("sets")}") }
-                OutlinedButton(onClick = { extra = (extra + 1).coerceAtMost(3); store.setExtraSets(ex.name, extra) }, modifier = Modifier.weight(1f)) { Text("+ ${l.t("sets")}") }
+            Text("RIR", color = NztMuted, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
+            Spacer(Modifier.height(7.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                (0..5).forEach { value ->
+                    FilterChip(
+                        selected = rir == value,
+                        onClick = { rir = value; store.setRir(ex.name, value) },
+                        label = { Text(value.toString(), fontSize = 11.sp) },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
             }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { load = (load - .5).coerceAtLeast(0.0); store.setLoad(ex.name, load) }, modifier = Modifier.weight(1f)) { Text("−0.5 kg") }
-                OutlinedButton(onClick = { load += .5; store.setLoad(ex.name, load) }, modifier = Modifier.weight(1f)) { Text("+0.5 kg") }
+
+            Spacer(Modifier.height(10.dp))
+            ResponsiveControlGrid(
+                onSetMinus = { extra = (extra - 1).coerceAtLeast(0); store.setExtraSets(ex.name, extra) },
+                onSetPlus = { extra = (extra + 1).coerceAtMost(3); store.setExtraSets(ex.name, extra) },
+                canSetMinus = extra > 0,
+                onLoadMinus = { load = (load - .5).coerceAtLeast(0.0); store.setLoad(ex.name, load) },
+                onLoadPlus = { load += .5; store.setLoad(ex.name, load) },
+                onLevelMinus = { level = (level - 1).coerceAtLeast(1); store.setLevel(ex.name, level) },
+                onLevelPlus = { level = (level + 1).coerceAtMost(5); store.setLevel(ex.name, level) },
+                canLevelMinus = level > 1,
+                canLevelPlus = level < 5
+            )
+
+            Spacer(Modifier.height(10.dp))
+            val suggestion = when {
+                done >= prescribed && rir >= 3 && load > 0 -> "NEXT: +0.5 kg"
+                done >= prescribed && rir >= 3 -> "NEXT: level +1"
+                done < prescribed && done > 0 -> "NEXT: keep load and complete all sets"
+                else -> "NEXT: hit the prescribed work with clean technique"
             }
-            Spacer(Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { level = (level - 1).coerceAtLeast(1); store.setLevel(ex.name, level) }, enabled = level > 1, modifier = Modifier.weight(1f)) { Text("${l.t("level")} −") }
-                OutlinedButton(onClick = { level = (level + 1).coerceAtMost(5); store.setLevel(ex.name, level) }, enabled = level < 5, modifier = Modifier.weight(1f)) { Text("${l.t("level")} +") }
+            Surface(color = NztSurface2, shape = RoundedCornerShape(12.dp)) {
+                Row(Modifier.fillMaxWidth().padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Icon(Icons.Default.AutoGraph, null, tint = NztAccent, modifier = Modifier.size(18.dp))
+                    Spacer(Modifier.width(8.dp))
+                    Text(suggestion, color = NztAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                }
             }
         }
     }
+}
+
+@Composable
+private fun ExerciseHeaderText(ex: ProExercise, prescribed: Int, load: Double, level: Int, best: Double, l: Localizer) {
+    Text(ex.name, fontSize = 18.sp, fontWeight = FontWeight.Black, maxLines = 2, overflow = TextOverflow.Ellipsis)
+    Text("$prescribed ${l.t("sets")} | ${ex.target} | ${ex.rest}s", color = NztMuted, fontSize = 12.sp)
+    Spacer(Modifier.height(6.dp))
+    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        Surface(color = NztSurface2, shape = RoundedCornerShape(10.dp)) {
+            Text(
+                if (load > 0) "${formatLoad(load)} kg" else "${l.t("level")} $level",
+                Modifier.padding(horizontal = 8.dp, vertical = 5.dp),
+                color = NztAccent,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        if (best > 0) {
+            Surface(color = NztSurface2, shape = RoundedCornerShape(10.dp)) {
+                Text("PR ${formatLoad(best)}", Modifier.padding(horizontal = 8.dp, vertical = 5.dp), color = NztAccent2, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ResponsiveControlGrid(
+    onSetMinus: () -> Unit,
+    onSetPlus: () -> Unit,
+    canSetMinus: Boolean,
+    onLoadMinus: () -> Unit,
+    onLoadPlus: () -> Unit,
+    onLevelMinus: () -> Unit,
+    onLevelPlus: () -> Unit,
+    canLevelMinus: Boolean,
+    canLevelPlus: Boolean
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(7.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            CompactControl("SET -", Modifier.weight(1f), enabled = canSetMinus, onClick = onSetMinus)
+            CompactControl("SET +", Modifier.weight(1f), onClick = onSetPlus)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            CompactControl("-0.5 KG", Modifier.weight(1f), onClick = onLoadMinus)
+            CompactControl("+0.5 KG", Modifier.weight(1f), onClick = onLoadPlus)
+        }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+            CompactControl("LEVEL -", Modifier.weight(1f), enabled = canLevelMinus, onClick = onLevelMinus)
+            CompactControl("LEVEL +", Modifier.weight(1f), enabled = canLevelPlus, onClick = onLevelPlus)
+        }
+    }
+}
+
+@Composable
+private fun CompactControl(text: String, modifier: Modifier = Modifier, enabled: Boolean = true, onClick: () -> Unit) {
+    OutlinedButton(
+        onClick = onClick,
+        enabled = enabled,
+        modifier = modifier.height(44.dp),
+        contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.dp),
+        shape = RoundedCornerShape(13.dp)
+    ) { Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1) }
 }
 
 private fun formatLoad(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toString() else String.format("%.1f", v)
@@ -314,11 +475,18 @@ private fun formatLoad(v: Double): String = if (v % 1.0 == 0.0) v.toInt().toStri
 @Composable
 private fun MetricChip(icon: androidx.compose.ui.graphics.vector.ImageVector, text: String, modifier: Modifier = Modifier) {
     Surface(modifier, color = NztSurface, shape = RoundedCornerShape(15.dp)) {
-        Row(Modifier.padding(10.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 9.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             Icon(icon, null, tint = NztAccent, modifier = Modifier.size(17.dp))
             Spacer(Modifier.width(6.dp))
-            Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text(text, fontSize = 11.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
+    }
+}
+
+@Composable
+private fun SmallActionButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+    OutlinedButton(onClick = onClick, modifier = modifier, contentPadding = PaddingValues(horizontal = 6.dp)) {
+        Text(text, maxLines = 1)
     }
 }
 
@@ -327,7 +495,11 @@ class ProTrainingLibraryActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val date = intent.getStringExtra("date")?.let(LocalDate::parse) ?: LocalDate.now()
         val profile = ProfileStore(this)
-        setContent { CompositionLocalProvider(LocalAppLanguage provides profile.language()) { NZTProTheme { ProTrainingLibraryScreen(date) { finish() } } } }
+        setContent {
+            CompositionLocalProvider(LocalAppLanguage provides profile.language()) {
+                NZTProTheme { ProTrainingLibraryScreen(date) { finish() } }
+            }
+        }
     }
 }
 
@@ -339,30 +511,44 @@ private fun ProTrainingLibraryScreen(date: LocalDate, onClose: () -> Unit) {
     var selected by remember { mutableStateOf(store.replacement(date)) }
 
     Scaffold(containerColor = NztBg, topBar = {
-        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, null) }
-            Column(Modifier.weight(1f)) { Text(l.t("exercise_library"), fontSize = 22.sp, fontWeight = FontWeight.Black); Text(l.t("replace_workout"), color = NztMuted, fontSize = 12.sp) }
+            Column(Modifier.weight(1f)) {
+                Text(l.t("exercise_library"), fontSize = 21.sp, fontWeight = FontWeight.Black)
+                Text(l.t("replace_workout"), color = NztMuted, fontSize = 12.sp)
+            }
         }
     }) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        androidx.compose.foundation.lazy.LazyColumn(
+            Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
             item {
-                WorkoutOptionCard("ORIGINAL", StathamEngine.forDate(date).session.title, StathamEngine.forDate(date).session.minutes, selected == null, StathamEngine.forDate(date).session.title) {
-                    selected = null; store.setReplacement(date, null)
+                val original = StathamEngine.forDate(date)
+                WorkoutOptionCard("ORIGINAL", original.session.title, original.session.minutes, selected == null, original.session.title) {
+                    selected = null
+                    store.setReplacement(date, null)
                 }
             }
-            itemsIndexed(alternateWorkouts) { _, w ->
+            items(alternateWorkouts.size) { i ->
+                val w = alternateWorkouts[i]
                 val title = l.t(w.titleKey)
-                WorkoutOptionCard(w.icon, title, w.minutes, selected == w.id, w.exercises.firstOrNull()?.name ?: title) {
-                    selected = w.id; store.setReplacement(date, w.id)
+                WorkoutOptionCard(w.code, title, w.minutes, selected == w.id, w.exercises.firstOrNull()?.name ?: title) {
+                    selected = w.id
+                    store.setReplacement(date, w.id)
                 }
             }
             item {
-                Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(22.dp)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(l.t("custom_workout"), fontWeight = FontWeight.Black, fontSize = 18.sp)
-                        Text("Create a personal session by choosing the closest equipment template, then adjust sets, load and level inside the workout.", color = NztMuted, fontSize = 13.sp)
-                        Spacer(Modifier.height(10.dp))
-                        Text("HOME • BARS • DUMBBELLS • BARBELL • RUN • BIKE • MOBILITY", color = NztAccent, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(20.dp)) {
+                    Column(Modifier.padding(14.dp)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Tune, null, tint = NztAccent)
+                            Spacer(Modifier.width(8.dp))
+                            Text(l.t("custom_workout"), fontWeight = FontWeight.Black, fontSize = 17.sp)
+                        }
+                        Spacer(Modifier.height(6.dp))
+                        Text("Choose the closest equipment template, then tune sets, load, RIR and level inside the workout.", color = NztMuted, fontSize = 13.sp)
                     }
                 }
             }
@@ -375,19 +561,37 @@ private fun WorkoutOptionCard(code: String, title: String, minutes: Int, selecte
     Card(
         Modifier.fillMaxWidth().clickable { onClick() },
         colors = CardDefaults.cardColors(containerColor = if (selected) NztSurface2 else NztSurface),
-        shape = RoundedCornerShape(22.dp),
-        border = if (selected) androidx.compose.foundation.BorderStroke(1.dp, NztAccent) else null
+        shape = RoundedCornerShape(20.dp),
+        border = if (selected) BorderStroke(1.dp, NztAccent) else null
     ) {
-        Row(Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
-            ExerciseIllustration(artName, Modifier.size(90.dp))
-            Spacer(Modifier.width(12.dp))
-            Column(Modifier.weight(1f)) {
-                Text(code, color = NztAccent, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
-                Text(title, fontWeight = FontWeight.Black, fontSize = 18.sp)
-                Text("$minutes min", color = NztMuted)
+        BoxWithConstraints(Modifier.fillMaxWidth().padding(12.dp)) {
+            if (maxWidth < 330.dp) {
+                Column {
+                    ExerciseIllustration(artName, Modifier.fillMaxWidth().height(130.dp))
+                    Spacer(Modifier.height(10.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        WorkoutOptionText(code, title, minutes, Modifier.weight(1f))
+                        RadioButton(selected = selected, onClick = onClick)
+                    }
+                }
+            } else {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    ExerciseIllustration(artName, Modifier.size(78.dp))
+                    Spacer(Modifier.width(10.dp))
+                    WorkoutOptionText(code, title, minutes, Modifier.weight(1f))
+                    RadioButton(selected = selected, onClick = onClick)
+                }
             }
-            RadioButton(selected = selected, onClick = onClick)
         }
+    }
+}
+
+@Composable
+private fun WorkoutOptionText(code: String, title: String, minutes: Int, modifier: Modifier = Modifier) {
+    Column(modifier) {
+        Text(code, color = NztAccent, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+        Text(title, fontWeight = FontWeight.Black, fontSize = 16.sp, maxLines = 2, overflow = TextOverflow.Ellipsis)
+        Text("$minutes min", color = NztMuted, fontSize = 12.sp)
     }
 }
 
@@ -409,29 +613,56 @@ private data class FoodEntry(
 }
 
 private class FoodStore(context: Context) {
-    private val p = context.getSharedPreferences("nzt_food_v2", Context.MODE_PRIVATE)
+    private val p = context.getSharedPreferences("nzt_food_v21", Context.MODE_PRIVATE)
+
     fun load(date: LocalDate): MutableList<FoodEntry> {
         val out = mutableListOf<FoodEntry>()
         val arr = try { JSONArray(p.getString("food_$date", "[]")) } catch (_: Exception) { JSONArray() }
         for (i in 0 until arr.length()) {
             val o = arr.getJSONObject(i)
-            out += FoodEntry(o.getString("id"), o.getString("meal"), o.getString("name"), o.getDouble("grams"), o.getDouble("kcal100"), o.getDouble("p100"), o.getDouble("f100"), o.getDouble("c100"))
+            out += FoodEntry(
+                o.getString("id"), o.getString("meal"), o.getString("name"), o.getDouble("grams"),
+                o.getDouble("kcal100"), o.getDouble("p100"), o.getDouble("f100"), o.getDouble("c100")
+            )
         }
         return out
     }
+
     fun save(date: LocalDate, entries: List<FoodEntry>) {
         val arr = JSONArray()
-        entries.forEach { e -> arr.put(JSONObject().apply { put("id", e.id); put("meal", e.meal); put("name", e.name); put("grams", e.grams); put("kcal100", e.kcal100); put("p100", e.protein100); put("f100", e.fats100); put("c100", e.carbs100) }) }
+        entries.forEach { e ->
+            arr.put(JSONObject().apply {
+                put("id", e.id); put("meal", e.meal); put("name", e.name); put("grams", e.grams)
+                put("kcal100", e.kcal100); put("p100", e.protein100); put("f100", e.fats100); put("c100", e.carbs100)
+            })
+        }
         p.edit().putString("food_$date", arr.toString()).apply()
     }
+
+    fun water(date: LocalDate): Int = p.getInt("water_$date", 0)
+    fun setWater(date: LocalDate, ml: Int) = p.edit().putInt("water_$date", ml.coerceAtLeast(0)).apply()
 }
+
+private data class QuickFood(val name: String, val grams: Double, val kcal: Double, val p: Double, val f: Double, val c: Double)
+private val quickFoods = listOf(
+    QuickFood("Eggs", 100.0, 143.0, 13.0, 9.5, 0.7),
+    QuickFood("Oats", 80.0, 370.0, 13.0, 7.0, 60.0),
+    QuickFood("Chicken breast", 180.0, 165.0, 31.0, 3.6, 0.0),
+    QuickFood("Rice cooked", 200.0, 130.0, 2.7, 0.3, 28.0),
+    QuickFood("Skyr", 200.0, 63.0, 11.0, 0.2, 4.0),
+    QuickFood("Banana", 120.0, 89.0, 1.1, 0.3, 23.0)
+)
 
 class ProNutritionActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val date = intent.getStringExtra("date")?.let(LocalDate::parse) ?: LocalDate.now()
         val profile = ProfileStore(this)
-        setContent { CompositionLocalProvider(LocalAppLanguage provides profile.language()) { NZTProTheme { ProNutritionScreen(date) { finish() } } } }
+        setContent {
+            CompositionLocalProvider(LocalAppLanguage provides profile.language()) {
+                NZTProTheme { ProNutritionScreen(date) { finish() } }
+            }
+        }
     }
 }
 
@@ -440,106 +671,164 @@ private fun ProNutritionScreen(date: LocalDate, onClose: () -> Unit) {
     val l = rememberLocalizer()
     val context = LocalContext.current
     val store = remember { FoodStore(context) }
-    var entries by remember { mutableStateOf(store.load(date).toList()) }
-    val target = remember(date) { StathamEngine.targets(StathamEngine.forDate(date)) }
-    var addingMeal by remember { mutableStateOf<String?>(null) }
+    val repo = remember { NZTRepository(context) }
+    val plan = remember(date) { StathamEngine.forDate(date) }
+    val targets = remember(date) { StathamEngine.targets(plan) }
+    var entries by remember(date) { mutableStateOf(store.load(date).toList()) }
+    var water by remember(date) { mutableIntStateOf(store.water(date)) }
+    var addMeal by remember { mutableStateOf<String?>(null) }
 
     val kcal = entries.sumOf { it.kcal }.roundToInt()
     val protein = entries.sumOf { it.protein }.roundToInt()
     val fats = entries.sumOf { it.fats }.roundToInt()
     val carbs = entries.sumOf { it.carbs }.roundToInt()
-    val meals = listOf("breakfast" to l.t("meal_breakfast"), "lunch" to l.t("meal_lunch"), "snack" to l.t("meal_snack"), "dinner" to l.t("meal_dinner"))
+
+    LaunchedEffect(kcal, protein) { repo.setNutrition(kcal, protein) }
 
     Scaffold(containerColor = NztBg, topBar = {
-        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically) {
+        Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 10.dp), verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, null) }
-            Column(Modifier.weight(1f)) { Text(l.t("nutrition"), fontSize = 22.sp, fontWeight = FontWeight.Black); Text(date.toString(), color = NztMuted, fontSize = 12.sp) }
-            TextButton(onClick = onClose) { Text(l.t("done")) }
+            Column(Modifier.weight(1f)) {
+                Text(l.t("nutrition"), fontSize = 21.sp, fontWeight = FontWeight.Black)
+                Text(date.toString(), color = NztMuted, fontSize = 12.sp)
+            }
         }
     }) { padding ->
-        LazyColumn(Modifier.padding(padding).fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item { NutritionHero(kcal, protein, fats, carbs, target.calories, target.protein, target.fats, target.carbs) }
-            meals.forEach { (mealKey, mealTitle) ->
-                val mealEntries = entries.filter { it.meal == mealKey }
-                item {
-                    MealCard(mealKey, mealTitle, mealEntries, target.calories) { addingMeal = mealKey }
+        androidx.compose.foundation.lazy.LazyColumn(
+            Modifier.padding(padding).fillMaxSize(),
+            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            item {
+                NutritionSummary(kcal, protein, fats, carbs, targets.calories, targets.protein)
+            }
+            item {
+                WaterCard(water) { delta ->
+                    water = (water + delta).coerceAtLeast(0)
+                    store.setWater(date, water)
                 }
             }
-        }
-    }
-
-    addingMeal?.let { meal ->
-        AddFoodDialog(meal, onDismiss = { addingMeal = null }) { entry ->
-            entries = entries + entry
-            store.save(date, entries)
-            addingMeal = null
-        }
-    }
-}
-
-@Composable
-private fun NutritionHero(kcal: Int, protein: Int, fats: Int, carbs: Int, targetCal: Int, targetP: Int, targetF: Int, targetC: Int) {
-    val l = rememberLocalizer()
-    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(24.dp)) {
-        Column(Modifier.padding(18.dp)) {
-            Text(l.t("daily_total").uppercase(), color = NztMuted, fontSize = 11.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
-            Spacer(Modifier.height(4.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(kcal.toString(), fontSize = 38.sp, fontWeight = FontWeight.Black, color = if (kcal <= targetCal) NztAccent else NztDanger)
-                Text(" / $targetCal kcal", color = NztMuted, modifier = Modifier.padding(bottom = 6.dp))
-            }
-            LinearProgressIndicator(progress = { (kcal.toFloat() / targetCal.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(7.dp), color = NztAccent, trackColor = NztLine)
-            Spacer(Modifier.height(14.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MacroPill("P", protein, targetP, Modifier.weight(1f))
-                MacroPill("F", fats, targetF, Modifier.weight(1f))
-                MacroPill("C", carbs, targetC, Modifier.weight(1f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun MacroPill(label: String, value: Int, target: Int, modifier: Modifier = Modifier) {
-    Surface(modifier, color = NztSurface2, shape = RoundedCornerShape(14.dp)) {
-        Column(Modifier.padding(10.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(label, color = NztAccent, fontWeight = FontWeight.Black)
-            Text("$value/$target g", fontSize = 11.sp, color = NztMuted)
-        }
-    }
-}
-
-@Composable
-private fun MealCard(mealKey: String, title: String, entries: List<FoodEntry>, targetCal: Int, onAdd: () -> Unit) {
-    val l = rememberLocalizer()
-    val kcal = entries.sumOf { it.kcal }.roundToInt()
-    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(22.dp)) {
-        Column(Modifier.padding(16.dp)) {
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text(title, fontSize = 18.sp, fontWeight = FontWeight.Black)
-                Text("$kcal kcal", color = NztAccent, fontWeight = FontWeight.Bold)
-            }
-            if (entries.isEmpty()) {
-                Text(mealSuggestion(mealKey), color = NztMuted, fontSize = 13.sp, modifier = Modifier.padding(vertical = 12.dp))
-            } else {
-                entries.forEach { e ->
-                    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.CenterVertically) {
-                        Box(Modifier.size(34.dp).background(NztSurface2, CircleShape), contentAlignment = Alignment.Center) { Icon(Icons.Default.Restaurant, null, tint = NztAccent, modifier = Modifier.size(16.dp)) }
-                        Spacer(Modifier.width(10.dp))
-                        Column(Modifier.weight(1f)) { Text(e.name, fontWeight = FontWeight.SemiBold); Text("${e.grams.roundToInt()} g • ${e.kcal.roundToInt()} kcal • P ${e.protein.roundToInt()} F ${e.fats.roundToInt()} C ${e.carbs.roundToInt()}", color = NztMuted, fontSize = 10.sp) }
+            item {
+                Text("QUICK ADD", color = NztMuted, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                Spacer(Modifier.height(7.dp))
+                Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                    quickFoods.forEach { q ->
+                        AssistChip(onClick = {
+                            val meal = addMeal ?: "breakfast"
+                            val updated = entries + FoodEntry(UUID.randomUUID().toString(), meal, q.name, q.grams, q.kcal, q.p, q.f, q.c)
+                            entries = updated
+                            store.save(date, updated)
+                        }, label = { Text(q.name) })
                     }
                 }
             }
-            OutlinedButton(onClick = onAdd, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), shape = RoundedCornerShape(14.dp)) { Icon(Icons.Default.Add, null); Spacer(Modifier.width(6.dp)); Text(l.t("add_food")) }
+            item { MealCard("breakfast", l.t("meal_breakfast"), entries, targets.calories * 25 / 100, onAdd = { addMeal = "breakfast" }, onDelete = { id -> entries = entries.filterNot { it.id == id }; store.save(date, entries) }) }
+            item { MealCard("lunch", l.t("meal_lunch"), entries, targets.calories * 35 / 100, onAdd = { addMeal = "lunch" }, onDelete = { id -> entries = entries.filterNot { it.id == id }; store.save(date, entries) }) }
+            item { MealCard("snack", l.t("meal_snack"), entries, targets.calories * 15 / 100, onAdd = { addMeal = "snack" }, onDelete = { id -> entries = entries.filterNot { it.id == id }; store.save(date, entries) }) }
+            item { MealCard("dinner", l.t("meal_dinner"), entries, targets.calories * 25 / 100, onAdd = { addMeal = "dinner" }, onDelete = { id -> entries = entries.filterNot { it.id == id }; store.save(date, entries) }) }
+            item { Spacer(Modifier.height(16.dp)) }
+        }
+    }
+
+    addMeal?.let { meal ->
+        AddFoodDialog(
+            meal = meal,
+            onDismiss = { addMeal = null },
+            onAdd = { e ->
+                val updated = entries + e
+                entries = updated
+                store.save(date, updated)
+                addMeal = null
+            }
+        )
+    }
+}
+
+@Composable
+private fun NutritionSummary(kcal: Int, protein: Int, fats: Int, carbs: Int, targetKcal: Int, targetProtein: Int) {
+    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(22.dp)) {
+        Column(Modifier.padding(16.dp)) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.Bottom) {
+                Column {
+                    Text("DAILY FUEL", color = NztMuted, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Text("$kcal / $targetKcal kcal", fontSize = 24.sp, fontWeight = FontWeight.Black, color = NztAccent)
+                }
+                Text("P $protein/$targetProtein", color = NztText, fontWeight = FontWeight.Bold)
+            }
+            Spacer(Modifier.height(10.dp))
+            LinearProgressIndicator(progress = { (kcal.toFloat() / targetKcal.coerceAtLeast(1)).coerceIn(0f, 1f) }, modifier = Modifier.fillMaxWidth().height(6.dp), color = NztAccent, trackColor = NztLine)
+            Spacer(Modifier.height(12.dp))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(7.dp)) {
+                MacroMini("PROTEIN", "${protein}g", Modifier.weight(1f))
+                MacroMini("FATS", "${fats}g", Modifier.weight(1f))
+                MacroMini("CARBS", "${carbs}g", Modifier.weight(1f))
+            }
         }
     }
 }
 
-private fun mealSuggestion(key: String): String = when (key) {
-    "breakfast" -> "Eggs + oats + berries / fruit"
-    "lunch" -> "Chicken / turkey + rice / buckwheat + vegetables"
-    "snack" -> "Skyr / cottage cheese + fruit or protein snack"
-    else -> "Fish / lean meat + potatoes / grains + vegetables"
+@Composable
+private fun MacroMini(label: String, value: String, modifier: Modifier = Modifier) {
+    Surface(modifier, color = NztSurface2, shape = RoundedCornerShape(12.dp)) {
+        Column(Modifier.padding(horizontal = 8.dp, vertical = 9.dp)) {
+            Text(label, color = NztMuted, fontSize = 8.sp, fontWeight = FontWeight.Black)
+            Text(value, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+        }
+    }
+}
+
+@Composable
+private fun WaterCard(water: Int, onChange: (Int) -> Unit) {
+    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(18.dp)) {
+        Row(Modifier.fillMaxWidth().padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.WaterDrop, null, tint = NztAccent2)
+            Spacer(Modifier.width(10.dp))
+            Column(Modifier.weight(1f)) {
+                Text("WATER", color = NztMuted, fontSize = 9.sp, fontWeight = FontWeight.Black)
+                Text("$water ml", fontWeight = FontWeight.Bold)
+            }
+            SmallActionButton("-250") { onChange(-250) }
+            Spacer(Modifier.width(6.dp))
+            Button(onClick = { onChange(250) }, contentPadding = PaddingValues(horizontal = 10.dp)) { Text("+250") }
+        }
+    }
+}
+
+@Composable
+private fun MealCard(mealId: String, title: String, all: List<FoodEntry>, target: Int, onAdd: () -> Unit, onDelete: (String) -> Unit) {
+    val meal = all.filter { it.meal == mealId }
+    val kcal = meal.sumOf { it.kcal }.roundToInt()
+    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(20.dp)) {
+        Column(Modifier.fillMaxWidth().padding(14.dp)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Column(Modifier.weight(1f)) {
+                    Text(title, fontWeight = FontWeight.Black, fontSize = 17.sp)
+                    Text("$kcal / $target kcal", color = NztMuted, fontSize = 12.sp)
+                }
+                FilledTonalIconButton(onClick = onAdd) { Icon(Icons.Default.Add, null) }
+            }
+            if (meal.isEmpty()) {
+                Text("No foods yet", color = NztMuted, fontSize = 12.sp)
+            } else {
+                Spacer(Modifier.height(6.dp))
+                meal.forEach { e ->
+                    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp), verticalAlignment = Alignment.CenterVertically) {
+                        Column(Modifier.weight(1f)) {
+                            Text(e.name, fontWeight = FontWeight.SemiBold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                            Text("${e.grams.roundToInt()} g | ${e.kcal.roundToInt()} kcal | P ${e.protein.roundToInt()} F ${e.fats.roundToInt()} C ${e.carbs.roundToInt()}", color = NztMuted, fontSize = 10.sp)
+                        }
+                        IconButton(onClick = { onDelete(e.id) }) { Icon(Icons.Default.DeleteOutline, null, tint = NztMuted) }
+                    }
+                }
+            }
+            Spacer(Modifier.height(4.dp))
+            OutlinedButton(onClick = onAdd, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(13.dp)) {
+                Icon(Icons.Default.Add, null, modifier = Modifier.size(17.dp))
+                Spacer(Modifier.width(6.dp))
+                Text(rememberLocalizer().t("add_food"), maxLines = 1)
+            }
+        }
+    }
 }
 
 @Composable
@@ -551,32 +840,43 @@ private fun AddFoodDialog(meal: String, onDismiss: () -> Unit, onAdd: (FoodEntry
     var protein by remember { mutableStateOf("") }
     var fats by remember { mutableStateOf("") }
     var carbs by remember { mutableStateOf("") }
-    fun clean(s: String) = s.filter { it.isDigit() || it == '.' || it == ',' }.replace(',', '.')
 
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(l.t("add_food")) },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(name, { name = it }, label = { Text("Product") }, singleLine = true)
-                OutlinedTextField(grams, { grams = clean(it) }, label = { Text(l.t("grams")) }, singleLine = true)
-                Text("Per 100 g", color = NztMuted, fontSize = 11.sp)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(kcal, { kcal = clean(it) }, label = { Text("kcal") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(protein, { protein = clean(it) }, label = { Text("P") }, modifier = Modifier.weight(1f), singleLine = true)
-                }
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    OutlinedTextField(fats, { fats = clean(it) }, label = { Text("F") }, modifier = Modifier.weight(1f), singleLine = true)
-                    OutlinedTextField(carbs, { carbs = clean(it) }, label = { Text("C") }, modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(name, { name = it.take(40) }, label = { Text("Food") }, singleLine = true, modifier = Modifier.fillMaxWidth())
+                NumericField(grams, { grams = it }, "Grams")
+                NumericField(kcal, { kcal = it }, "kcal / 100 g")
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    NumericField(protein, { protein = it }, "P", Modifier.weight(1f))
+                    NumericField(fats, { fats = it }, "F", Modifier.weight(1f))
+                    NumericField(carbs, { carbs = it }, "C", Modifier.weight(1f))
                 }
             }
         },
         confirmButton = {
             Button(onClick = {
-                val entry = FoodEntry(UUID.randomUUID().toString(), meal, name.ifBlank { "Food" }, grams.toDoubleOrNull() ?: 100.0, kcal.toDoubleOrNull() ?: 0.0, protein.toDoubleOrNull() ?: 0.0, fats.toDoubleOrNull() ?: 0.0, carbs.toDoubleOrNull() ?: 0.0)
-                onAdd(entry)
-            }) { Text(l.t("add_food")) }
+                val g = grams.toDoubleOrNull() ?: 0.0
+                val k = kcal.toDoubleOrNull() ?: 0.0
+                if (name.isNotBlank() && g > 0 && k >= 0) {
+                    onAdd(FoodEntry(UUID.randomUUID().toString(), meal, name.trim(), g, k, protein.toDoubleOrNull() ?: 0.0, fats.toDoubleOrNull() ?: 0.0, carbs.toDoubleOrNull() ?: 0.0))
+                }
+            }) { Text(l.t("save")) }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text(l.t("skip")) } }
+    )
+}
+
+@Composable
+private fun NumericField(value: String, onValueChange: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
+    OutlinedTextField(
+        value = value,
+        onValueChange = { onValueChange(it.filter { ch -> ch.isDigit() || ch == '.' || ch == ',' }.replace(',', '.').take(8)) },
+        label = { Text(label, fontSize = 11.sp) },
+        singleLine = true,
+        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
+        modifier = modifier.fillMaxWidth()
     )
 }

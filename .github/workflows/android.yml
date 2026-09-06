@@ -3,7 +3,7 @@ name: Build NZT365 Release APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master, nzt-v2-professional, nzt-v2.1-polish ]
+    branches: [ main, master, nzt-v3-final-pass ]
 
 jobs:
   build:
@@ -11,6 +11,13 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+
+      - name: Apply staged v3 source
+        if: ${{ hashFiles('.v3patch/patch.b64') != '' }}
+        shell: bash
+        run: |
+          base64 --decode .v3patch/patch.b64 > "$RUNNER_TEMP/nzt-v3.zip"
+          unzip -o "$RUNNER_TEMP/nzt-v3.zip" -d "$GITHUB_WORKSPACE"
 
       - uses: actions/setup-java@v4
         with:
@@ -40,9 +47,9 @@ jobs:
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v2.1.0.apk
+        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v3.0.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v2.1.0
-          path: NZT365-v2.1.0.apk
+          name: NZT365-v3.0.0
+          path: NZT365-v3.0.0.apk

@@ -16,6 +16,22 @@ android {
         versionName = "1.0.0"
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file(System.getenv("NZT_KEYSTORE_FILE"))
+            storePassword = System.getenv("NZT_KEYSTORE_PASSWORD")
+            keyAlias = System.getenv("NZT_KEY_ALIAS")
+            keyPassword = System.getenv("NZT_KEY_PASSWORD")
+        }
+    }
+
+    buildTypes {
+        getByName("release") {
+            signingConfig = signingConfigs.getByName("release")
+            isMinifyEnabled = false
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17

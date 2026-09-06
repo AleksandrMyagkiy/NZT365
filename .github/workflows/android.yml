@@ -13,10 +13,10 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Apply staged v3 source
-        if: ${{ hashFiles('.v3patch/patch.b64') != '' }}
+        if: ${{ hashFiles('.v3patch/chunk_00') != '' }}
         shell: bash
         run: |
-          base64 --decode .v3patch/patch.b64 > "$RUNNER_TEMP/nzt-v3.zip"
+          cat .v3patch/chunk_* | base64 --decode > "$RUNNER_TEMP/nzt-v3.zip"
           unzip -o "$RUNNER_TEMP/nzt-v3.zip" -d "$GITHUB_WORKSPACE"
 
       - uses: actions/setup-java@v4

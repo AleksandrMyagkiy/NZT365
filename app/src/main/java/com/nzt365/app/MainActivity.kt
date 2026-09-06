@@ -978,7 +978,9 @@ fun GrowthScreen(
             verticalArrangement =
                 Arrangement.spacedBy(12.dp)
         ) {
-
+            item {
+    BooksSection()
+}
             item {
 
                 SectionTitle(

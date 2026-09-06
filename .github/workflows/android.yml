@@ -3,7 +3,7 @@ name: Build NZT365 Release APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master ]
+    branches: [ main, master, nzt-v1.3-statham-full ]
 
 jobs:
   build:
@@ -41,9 +41,11 @@ jobs:
 
       - name: Rename APK
         run: |
-          cp app/build/outputs/apk/release/app-release.apk NZT365-v1.1.1.apk
+          cp app/build/outputs/apk/release/app-release.apk NZT365-v1.3.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v1.1.1
-          path: NZT365-v1.1.1.apk
+          name: NZT365-v1.3.0
+          path: NZT365-v1.3.0.apk
+
+# v1.3 full integration validation

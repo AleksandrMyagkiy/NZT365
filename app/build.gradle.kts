@@ -12,8 +12,8 @@ android {
         applicationId = "com.nzt365.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 14
-        versionName = "1.3.0"
+        versionCode = 15
+        versionName = "2.0.0"
     }
 
     signingConfigs {
@@ -39,7 +39,6 @@ android {
 
     kotlinOptions { jvmTarget = "17" }
     buildFeatures { compose = true }
-
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 

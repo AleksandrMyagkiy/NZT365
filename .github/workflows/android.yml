@@ -40,9 +40,9 @@ jobs:
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v4.2.0.apk
+        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v4.3.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v4.2.0
-          path: NZT365-v4.2.0.apk
+          name: NZT365-v4.3.0
+          path: NZT365-v4.3.0.apk

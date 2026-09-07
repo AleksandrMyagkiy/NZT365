@@ -16,7 +16,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.SubcomposeAsyncImage
@@ -115,45 +114,63 @@ fun ExercisePhoto(name: String, modifier: Modifier = Modifier) {
     val shape = RoundedCornerShape(22.dp)
 
     Box(modifier = modifier.clip(shape).background(Color(0xFF0A131B))) {
-        SubcomposeAsyncImage(
-            model = media.url,
-            contentDescription = name,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            when (painter.state) {
-                is coil.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                else -> PremiumMediaFallback(media)
-            }
-        }
-
+        ExerciseImageLayer(media)
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
                     0f to Color(0x16000000),
-                    .42f to Color.Transparent,
-                    1f to Color(0xEE071018)
+                    .56f to Color.Transparent,
+                    1f to Color(0xC6071018)
                 )
             )
         )
-
-        Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
+        Surface(
+            modifier = Modifier.align(Alignment.BottomStart).padding(14.dp),
+            color = Color(0xBB071018),
+            shape = RoundedCornerShape(10.dp)
+        ) {
             Text(
                 media.label,
+                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                 color = NztAccent,
                 fontSize = 10.sp,
                 fontWeight = FontWeight.Black,
-                letterSpacing = 1.2.sp
+                letterSpacing = 1.1.sp
             )
-            Spacer(Modifier.height(3.dp))
-            Text(
-                name,
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Black,
-                maxLines = 2,
-                overflow = TextOverflow.Ellipsis
+        }
+    }
+}
+
+@Composable
+fun ExerciseThumbnail(name: String, modifier: Modifier = Modifier) {
+    val media = mediaFor(name)
+    Box(
+        modifier = modifier
+            .clip(RoundedCornerShape(18.dp))
+            .background(Color(0xFF0A131B))
+    ) {
+        ExerciseImageLayer(media)
+        Box(
+            Modifier.fillMaxSize().background(
+                Brush.verticalGradient(
+                    listOf(Color.Transparent, Color(0x66071018))
+                )
             )
+        )
+    }
+}
+
+@Composable
+private fun ExerciseImageLayer(media: ExerciseMedia) {
+    SubcomposeAsyncImage(
+        model = media.url,
+        contentDescription = media.label,
+        contentScale = ContentScale.Crop,
+        modifier = Modifier.fillMaxSize()
+    ) {
+        when (painter.state) {
+            is coil.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
+            else -> PremiumMediaFallback(media)
         }
     }
 }
@@ -174,14 +191,14 @@ private fun PremiumMediaFallback(media: ExerciseMedia) {
     ) {
         Surface(
             color = Color(0x331F3D4B),
-            shape = RoundedCornerShape(28.dp)
+            shape = RoundedCornerShape(24.dp)
         ) {
-            Box(Modifier.size(100.dp), contentAlignment = Alignment.Center) {
+            Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
                 Icon(
                     media.icon,
                     contentDescription = null,
                     tint = NztAccent,
-                    modifier = Modifier.size(52.dp)
+                    modifier = Modifier.size(46.dp)
                 )
             }
         }

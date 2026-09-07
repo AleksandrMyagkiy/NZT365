@@ -17,7 +17,15 @@ jobs:
         shell: bash
         run: |
           cat .v3patch/chunk_0[0-6] | base64 --decode > "$RUNNER_TEMP/nzt-v3.zip"
-          unzip -o "$RUNNER_TEMP/nzt-v3.zip" -x 'app/src/main/res/drawable-nodpi/exercise_sprite.jpg' 'app/src/main/java/com/nzt365/app/V3ExerciseMedia.kt' -d "$GITHUB_WORKSPACE" || true
+          unzip -o "$RUNNER_TEMP/nzt-v3.zip" \
+            -x 'app/src/main/res/drawable-nodpi/exercise_sprite.jpg' \
+               'app/src/main/java/com/nzt365/app/V3ExerciseMedia.kt' \
+               'app/src/main/java/com/nzt365/app/V3Main.kt' \
+               'app/src/main/java/com/nzt365/app/V3Books.kt' \
+               'app/src/main/java/com/nzt365/app/V3Strings.kt' \
+               'app/src/main/java/com/nzt365/app/MainActivity.kt' \
+            -d "$GITHUB_WORKSPACE" || true
+          sed -i 's/private data class V3SetLog/data class V3SetLog/' app/src/main/java/com/nzt365/app/V3Fitness.kt
           test -f app/src/main/java/com/nzt365/app/V3Main.kt
           test -f app/src/main/java/com/nzt365/app/V3Fitness.kt
           test -f app/src/main/java/com/nzt365/app/V3Books.kt

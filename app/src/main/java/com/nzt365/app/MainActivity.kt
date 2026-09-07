@@ -25,16 +25,12 @@ class MainActivity : ComponentActivity() {
                 val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
                 LaunchedEffect(Unit) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
             }
-            NZTProRoot(repo, profileStore)
+            NZT3Root(repo, profileStore)
         }
     }
 
     private fun scheduleReminder() {
         val request = PeriodicWorkRequestBuilder<ReminderWorker>(24, TimeUnit.HOURS).build()
-        WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-            "nzt_daily",
-            ExistingPeriodicWorkPolicy.KEEP,
-            request
-        )
+        WorkManager.getInstance(this).enqueueUniquePeriodicWork("nzt_daily", ExistingPeriodicWorkPolicy.KEEP, request)
     }
 }

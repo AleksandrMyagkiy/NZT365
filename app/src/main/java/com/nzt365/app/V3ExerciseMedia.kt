@@ -6,6 +6,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -18,7 +19,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import coil.compose.AsyncImage
 import coil.compose.SubcomposeAsyncImage
 import coil.compose.SubcomposeAsyncImageContent
 
@@ -69,11 +69,9 @@ fun ExercisePhoto(name: String, modifier: Modifier = Modifier) {
         ) {
             when (painter.state) {
                 is coil.compose.AsyncImagePainter.State.Success -> SubcomposeAsyncImageContent()
-                is coil.compose.AsyncImagePainter.State.Loading -> PremiumMediaFallback(media)
                 else -> PremiumMediaFallback(media)
             }
         }
-
         Box(
             Modifier.fillMaxSize().background(
                 Brush.verticalGradient(
@@ -83,7 +81,6 @@ fun ExercisePhoto(name: String, modifier: Modifier = Modifier) {
                 )
             )
         )
-
         Column(Modifier.align(Alignment.BottomStart).padding(16.dp)) {
             Text(media.label, color = NztAccent, fontSize = 10.sp, fontWeight = FontWeight.Black, letterSpacing = 1.2.sp)
             Spacer(Modifier.height(3.dp))

@@ -27,5 +27,5 @@ fun artTypeFor(name: String): ExerciseArtType {
 
 @Composable
 fun ExerciseIllustration(name: String, modifier: Modifier = Modifier) {
-    ExercisePhoto(name = name, modifier = modifier)
+    ExerciseThumbnail(name = name, modifier = modifier)
 }

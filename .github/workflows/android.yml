@@ -3,7 +3,7 @@ name: Build NZT365 Release APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master, nzt-v3-final-pass ]
+    branches: [ main, master ]
 
 jobs:
   build:
@@ -11,31 +11,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-
-      - name: Apply staged v3 engine only
-        if: ${{ hashFiles('.v3patch/chunk_00') != '' }}
-        shell: bash
-        run: |
-          cat .v3patch/chunk_0[0-6] | base64 --decode > "$RUNNER_TEMP/nzt-v3.zip"
-          unzip -o "$RUNNER_TEMP/nzt-v3.zip" \
-            -x 'app/build.gradle.kts' \
-               'app/src/main/AndroidManifest.xml' \
-               '.github/workflows/android.yml' \
-               'app/src/main/res/drawable-nodpi/exercise_sprite.jpg' \
-               'app/src/main/java/com/nzt365/app/V3ExerciseMedia.kt' \
-               'app/src/main/java/com/nzt365/app/V3Main.kt' \
-               'app/src/main/java/com/nzt365/app/V3Books.kt' \
-               'app/src/main/java/com/nzt365/app/V3Strings.kt' \
-               'app/src/main/java/com/nzt365/app/MainActivity.kt' \
-            -d "$GITHUB_WORKSPACE" || true
-          sed -i 's/private data class V3SetLog/data class V3SetLog/' app/src/main/java/com/nzt365/app/V3Fitness.kt
-          sed -i 's/V3WorkoutActivity::class.java/ProWorkoutActivity::class.java/g' app/src/main/java/com/nzt365/app/V3Main.kt
-          sed -i 's/V3NutritionActivity::class.java/ProNutritionActivity::class.java/g' app/src/main/java/com/nzt365/app/V3Main.kt
-          sed -i 's/ExerciseIllustration(/ExercisePhoto(/g' app/src/main/java/com/nzt365/app/ProFitnessScreens.kt
-          test -f app/src/main/java/com/nzt365/app/V3Main.kt
-          test -f app/src/main/java/com/nzt365/app/V3Fitness.kt
-          test -f app/src/main/java/com/nzt365/app/V3Books.kt
-          test -f app/src/main/java/com/nzt365/app/V3Strings.kt
 
       - uses: actions/setup-java@v4
         with:
@@ -65,9 +40,9 @@ jobs:
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v3.1.0.apk
+        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v4.0.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v3.1.0
-          path: NZT365-v3.1.0.apk
+          name: NZT365-v4.0.0
+          path: NZT365-v4.0.0.apk

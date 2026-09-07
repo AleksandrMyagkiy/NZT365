@@ -26,7 +26,11 @@ class NZTRepository(context: Context) {
     fun tasksForToday(): List<DailyTask> {
         val key = "tasks_${LocalDate.now()}"
         val raw = prefs.getString(key, null)
-        if (raw != null) return decodeTasks(raw)
+        if (raw != null) {
+            val tasks = decodeTasks(raw)
+            persistScore(LocalDate.now(), completionPercent(tasks))
+            return tasks
+        }
         val tasks = seedTasks()
         saveTasks(tasks)
         return tasks
@@ -37,7 +41,9 @@ class NZTRepository(context: Context) {
         tasks.forEach { t -> arr.put(JSONObject().apply {
             put("id",t.id); put("category",t.category); put("title",t.title); put("target",t.target); put("done",t.done)
         }) }
-        prefs.edit().putString("tasks_${LocalDate.now()}", arr.toString()).apply()
+        val today = LocalDate.now()
+        prefs.edit().putString("tasks_$today", arr.toString()).apply()
+        persistScore(today, completionPercent(tasks))
     }
 
     private fun decodeTasks(raw:String):List<DailyTask>{
@@ -69,6 +75,31 @@ class NZTRepository(context: Context) {
             DailyTask("career","CAREER","15 минут карьерного действия"),
             DailyTask("money","MONEY","1 действие для роста дохода")
         )
+    }
+
+    private fun persistScore(date: LocalDate, score: Int) {
+        prefs.edit().putInt("score_$date", score.coerceIn(0,100)).apply()
+    }
+
+    fun scoreForDate(date: LocalDate): Int = prefs.getInt("score_$date", 0)
+
+    fun lastDailyScores(days: Int): List<Pair<LocalDate, Int>> {
+        val count = days.coerceIn(1, 30)
+        val today = LocalDate.now()
+        return (count - 1 downTo 0).map { offset ->
+            val date = today.minusDays(offset.toLong())
+            date to scoreForDate(date)
+        }
+    }
+
+    fun scoreStreak(): Int {
+        var streak = 0
+        var date = LocalDate.now()
+        while (scoreForDate(date) > 0 && streak < 365) {
+            streak++
+            date = date.minusDays(1)
+        }
+        return streak
     }
 
     fun saveBody(log: BodyLog){

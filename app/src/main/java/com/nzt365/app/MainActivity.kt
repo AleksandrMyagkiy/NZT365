@@ -25,7 +25,7 @@ class MainActivity : ComponentActivity() {
                 val launcher = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { }
                 LaunchedEffect(Unit) { launcher.launch(Manifest.permission.POST_NOTIFICATIONS) }
             }
-            NZT7Root(repo, profileStore)
+            NZT8Root(repo, profileStore)
         }
     }
 

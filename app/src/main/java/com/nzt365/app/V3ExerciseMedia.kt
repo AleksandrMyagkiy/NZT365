@@ -115,6 +115,8 @@ private fun mediaFor(name: String): ExerciseMedia {
     }
 }
 
+fun exerciseMediaLabel(name: String): String = mediaFor(name).label
+
 @Composable
 fun ExercisePhoto(name: String, modifier: Modifier = Modifier) {
     val media = mediaFor(name)

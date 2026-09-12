@@ -191,22 +191,13 @@ fun NZT9Root(repo: NZTRepository, profileStore: ProfileStore) {
     Box(Modifier.fillMaxSize()) {
         NZT7Root(repo, profileStore)
         if (profileStore.isOnboarded() && !showHub) {
-            Surface(
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .width(48.dp)
-                    .height(92.dp)
-                    .clickable { showHub = true },
-                color = NztAccent,
+            FloatingActionButton(
+                onClick = { showHub = true },
+                modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 14.dp, bottom = 92.dp).size(50.dp),
+                containerColor = NztAccent,
                 contentColor = Color.Black,
-                shape = RoundedCornerShape(topStart = 22.dp, bottomStart = 22.dp)
-            ) {
-                Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-                    Icon(Icons.Default.Insights, null, modifier = Modifier.size(21.dp))
-                    Spacer(Modifier.height(5.dp))
-                    Text("LAB", fontSize = 9.sp, fontWeight = FontWeight.Black)
-                }
-            }
+                shape = RoundedCornerShape(17.dp)
+            ) { Icon(Icons.Default.Insights, "Performance Lab", modifier = Modifier.size(24.dp)) }
         }
         if (showHub) {
             Surface(Modifier.fillMaxSize(), color = NztBg) {

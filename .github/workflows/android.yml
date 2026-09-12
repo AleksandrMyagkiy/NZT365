@@ -3,7 +3,7 @@ name: Build NZT365 Release APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master, nzt-v9-adaptive-reader ]
+    branches: [ main, master, nzt-v10-reader-reset-brand ]
 
 jobs:
   build:
@@ -40,9 +40,9 @@ jobs:
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v9.0.0.apk
+        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v10.0.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v9.0.0
-          path: NZT365-v9.0.0.apk
+          name: NZT365-v10.0.0
+          path: NZT365-v10.0.0.apk

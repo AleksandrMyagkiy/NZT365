@@ -1,0 +1,31 @@
+name: Apply NZT v10 integration
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ nzt-v10-reader-reset-brand ]
+    paths:
+      - 'tools/apply_v10.py'
+      - '.github/workflows/apply_v10.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nzt-v10-reader-reset-brand
+      - name: Apply patch
+        run: python tools/apply_v10.py
+      - name: Commit integrated source
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if ! git diff --cached --quiet; then
+            git commit -m "Integrate NZT 365 v10 reader reset and branding"
+            git push
+          fi

@@ -12,8 +12,8 @@ android {
         applicationId = "com.nzt365.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 25
-        versionName = "9.0.0"
+        versionCode = 26
+        versionName = "10.0.0"
     }
 
     signingConfigs {
@@ -41,7 +41,7 @@ android {
         jvmTarget = "17"
         freeCompilerArgs += "-opt-in=androidx.compose.material3.ExperimentalMaterial3Api"
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     packaging { resources.excludes += "/META-INF/{AL2.0,LGPL2.1}" }
 }
 
@@ -57,4 +57,5 @@ dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.work:work-runtime-ktx:2.10.0")
     implementation("io.coil-kt:coil-compose:2.7.0")
+    implementation("com.github.junrar:junrar:8.1.1")
 }

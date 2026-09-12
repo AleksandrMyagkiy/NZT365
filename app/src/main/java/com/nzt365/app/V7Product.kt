@@ -191,7 +191,7 @@ private fun V7Shell(
             when (tab) {
                 V7Tab.TODAY -> V7Today(repo, name, lang)
                 V7Tab.BODY -> V7Body(repo, lang)
-                V7Tab.GROWTH -> V5BooksScreen(lang, Modifier.fillMaxSize())
+                V7Tab.GROWTH -> V10BooksScreen(lang, Modifier.fillMaxSize())
                 V7Tab.PROGRESS -> V7Progress(repo, lang)
                 V7Tab.SETTINGS -> V7Settings(profile, lang, onLanguage, onProfileChanged)
             }
@@ -663,7 +663,9 @@ private fun V7Settings(
     onLanguage: (AppLanguage) -> Unit,
     onProfileChanged: () -> Unit
 ) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf(profile.name()) }
+    var showReset by remember { mutableStateOf(false) }
     LazyColumn(
         Modifier.fillMaxSize(),
         contentPadding = PaddingValues(horizontal = 20.dp, vertical = 18.dp),
@@ -675,9 +677,7 @@ private fun V7Settings(
                 Column(Modifier.padding(16.dp)) {
                     OutlinedTextField(name, { name = it.take(28) }, modifier = Modifier.fillMaxWidth(), label = { Text(v7Text(lang, "Имя", "Name", "Imię", "Ім'я")) })
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = { profile.setName(name); onProfileChanged() }, modifier = Modifier.fillMaxWidth()) {
-                        Text(v7Text(lang, "Сохранить", "Save", "Zapisz", "Зберегти"))
-                    }
+                    Button(onClick = { profile.setName(name); onProfileChanged() }, modifier = Modifier.fillMaxWidth()) { Text(v7Text(lang, "Сохранить", "Save", "Zapisz", "Зберегти")) }
                 }
             }
         }
@@ -687,10 +687,7 @@ private fun V7Settings(
                     Text(v7Text(lang, "Язык", "Language", "Język", "Мова"), fontWeight = FontWeight.Black)
                     Spacer(Modifier.height(8.dp))
                     AppLanguage.entries.forEach { item ->
-                        Row(
-                            Modifier.fillMaxWidth().clickable { onLanguage(item) }.padding(vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
+                        Row(Modifier.fillMaxWidth().clickable { onLanguage(item) }.padding(vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                             RadioButton(selected = item == lang, onClick = { onLanguage(item) })
                             Text(item.label)
                         }
@@ -699,21 +696,44 @@ private fun V7Settings(
             }
         }
         item {
-            Surface(color = NztSurface2, shape = RoundedCornerShape(16.dp)) {
-                Column(Modifier.padding(14.dp)) {
-                    Text("NZT 365 v7.0", color = NztAccent, fontWeight = FontWeight.Black)
-                    Text(
-                        v7Text(lang,
-                            "Данные хранятся локально на устройстве.",
-                            "Data is stored locally on this device.",
-                            "Dane są przechowywane lokalnie na urządzeniu.",
-                            "Дані зберігаються локально на пристрої."),
-                        color = NztMuted,
-                        fontSize = 11.sp
-                    )
+            Card(colors = CardDefaults.cardColors(containerColor = Color(0xFF24171A)), shape = RoundedCornerShape(22.dp)) {
+                Column(Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.RestartAlt, null, tint = Color(0xFFFF7777))
+                        Spacer(Modifier.width(9.dp))
+                        Column {
+                            Text(v7Text(lang, "Начать NZT 365 заново", "Restart NZT 365", "Zacznij NZT 365 od nowa", "Почати NZT 365 заново"), fontWeight = FontWeight.Black)
+                            Text(v7Text(lang, "Обнулит тренировки, питание, книги, замеры и все результаты.", "Clears workouts, nutrition, books, measurements and all progress.", "Usuwa treningi, odżywianie, książki, pomiary i cały postęp.", "Обнулить тренування, харчування, книги, заміри та весь прогрес."), color = NztMuted, fontSize = 11.sp)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    OutlinedButton(onClick = { showReset = true }, modifier = Modifier.fillMaxWidth()) {
+                        Icon(Icons.Default.DeleteForever, null)
+                        Spacer(Modifier.width(7.dp))
+                        Text(v7Text(lang, "Обнулить всё", "Reset everything", "Wyzeruj wszystko", "Обнулити все"), fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
+        item {
+            Surface(color = NztSurface2, shape = RoundedCornerShape(16.dp)) {
+                Column(Modifier.padding(14.dp)) {
+                    Text("NZT 365 v${BuildConfig.VERSION_NAME}", color = NztAccent, fontWeight = FontWeight.Black)
+                    Text(v7Text(lang, "Версия определяется автоматически. Данные хранятся локально на устройстве.", "Version is detected automatically. Data is stored locally on this device.", "Wersja jest wykrywana automatycznie. Dane są przechowywane lokalnie.", "Версія визначається автоматично. Дані зберігаються локально."), color = NztMuted, fontSize = 11.sp)
+                }
+            }
+        }
+        item { Spacer(Modifier.height(40.dp)) }
+    }
+    if (showReset) {
+        AlertDialog(
+            onDismissRequest = { showReset = false },
+            title = { Text(v7Text(lang, "Точно начать сначала?", "Start from zero?", "Na pewno zacząć od zera?", "Точно почати спочатку?"), fontWeight = FontWeight.Black) },
+            text = { Text(v7Text(lang, "Будут удалены все результаты, история тренировок, замеры, питание, заметки и загруженные книги. Это действие нельзя отменить.", "All progress, workout history, measurements, nutrition, notes and imported books will be deleted. This cannot be undone.", "Cały postęp, historia treningów, pomiary, odżywianie, notatki i zaimportowane książki zostaną usunięte. Tej operacji nie można cofnąć.", "Увесь прогрес, історія тренувань, заміри, харчування, нотатки та завантажені книги будуть видалені. Дію не можна скасувати.")) },
+            confirmButton = { Button(onClick = { showReset = false; V10Reset.everything(context) }) { Text(v7Text(lang, "УДАЛИТЬ И НАЧАТЬ", "DELETE & RESTART", "USUŃ I ZACZNIJ", "ВИДАЛИТИ Й ПОЧАТИ")) } },
+            dismissButton = { TextButton(onClick = { showReset = false }) { Text(v7Text(lang, "Отмена", "Cancel", "Anuluj", "Скасувати")) } },
+            containerColor = NztSurface
+        )
     }
 }
 

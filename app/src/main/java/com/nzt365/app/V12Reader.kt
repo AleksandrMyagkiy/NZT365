@@ -1,7 +1,5 @@
 package com.nzt365.app
 
-import android.content.Context
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -38,7 +36,6 @@ private fun V12ReaderTheme.colors()=when(this){
 }
 
 class V12ReaderActivity:ComponentActivity(){
-    companion object{ fun intent(c:Context,b:V10Book)=Intent(c,V12ReaderActivity::class.java).putExtra("id",b.id) }
     override fun onCreate(savedInstanceState:Bundle?){
         super.onCreate(savedInstanceState)
         val lib=V10Library(this); val id=intent.getStringExtra("id")?:return finish(); val b=lib.books().firstOrNull{it.id==id}?:return finish()
@@ -49,7 +46,7 @@ class V12ReaderActivity:ComponentActivity(){
 @Composable
 private fun V12Reader(initial:V10Book,lib:V10Library,onClose:()->Unit){
     val context=LocalContext.current
-    val prefs=remember{context.getSharedPreferences("nzt_reader_v12",Context.MODE_PRIVATE)}
+    val prefs=remember{context.getSharedPreferences("nzt_reader_v12",android.content.Context.MODE_PRIVATE)}
     var theme by remember{mutableStateOf(runCatching{V12ReaderTheme.valueOf(prefs.getString("theme","PAPER")!!)}.getOrDefault(V12ReaderTheme.PAPER))}
     var font by remember{mutableIntStateOf(prefs.getInt("font",20))}
     var line by remember{mutableFloatStateOf(prefs.getFloat("line",1.55f))}
@@ -90,6 +87,6 @@ private fun V12Reader(initial:V10Book,lib:V10Library,onClose:()->Unit){
         Text("Шрифт $font",fontWeight=FontWeight.Bold);Slider(font.toFloat(),{font=it.roundToInt()},valueRange=14f..32f)
         Text("Интервал ${"%.1f".format(line)}",fontWeight=FontWeight.Bold);Slider(line,{line=it},valueRange=1.2f..2.0f)
         Text("Поля $margin",fontWeight=FontWeight.Bold);Slider(margin.toFloat(),{margin=it.roundToInt()},valueRange=12f..42f)
-        Text("V12 использует непрерывный книжный поток: между экранами больше нет потерянных строк.",color=NztMuted,fontSize=11.sp,modifier=Modifier.padding(top=8.dp))
+        Text("Непрерывный книжный поток: строки больше не теряются между экранами.",color=NztMuted,fontSize=11.sp,modifier=Modifier.padding(top=8.dp))
     }}
 }

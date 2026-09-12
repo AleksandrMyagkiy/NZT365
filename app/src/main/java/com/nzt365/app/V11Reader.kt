@@ -8,9 +8,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -33,7 +31,7 @@ private enum class V11Theme { LIGHT, PAPER, SEPIA, NIGHT, OLED }
 private data class V11Palette(val outside: Color, val page: Color, val text: Color, val muted: Color)
 
 private fun V11Theme.palette(): V11Palette = when (this) {
-    V11Theme.LIGHT -> V11Palette(Color(0xFFECEFF1), Color(0xFFFFFFFF), Color(0xFF161616), Color(0xFF686868))
+    V11Theme.LIGHT -> V11Palette(Color(0xFFECEFF1), Color.White, Color(0xFF161616), Color(0xFF686868))
     V11Theme.PAPER -> V11Palette(Color(0xFFE9E3D7), Color(0xFFFFFCF4), Color(0xFF28231F), Color(0xFF756E66))
     V11Theme.SEPIA -> V11Palette(Color(0xFFD6C3A0), Color(0xFFF3E2BE), Color(0xFF33291D), Color(0xFF76634C))
     V11Theme.NIGHT -> V11Palette(Color(0xFF071018), Color(0xFF111B22), Color(0xFFE9EDF0), Color(0xFF89949B))
@@ -49,7 +47,7 @@ private class V11ReaderPrefs(context: Context) {
         get() = p.getInt("font", 19)
         set(v) { p.edit().putInt("font", v).apply() }
     var line: Float
-        get() = p.getFloat("line", 1.55f)
+        get() = p.getFloat("line", 1.48f)
         set(v) { p.edit().putFloat("line", v).apply() }
     var margin: Int
         get() = p.getInt("margin", 22)
@@ -71,12 +69,12 @@ class V11ReaderActivity : ComponentActivity() {
         val lib = V10Library(this)
         val id = intent.getStringExtra("id") ?: return finish()
         val book = lib.books().firstOrNull { it.id == id } ?: return finish()
-        setContent { NZTProTheme { V11Reader(book, lib) { finish() } } }
+        setContent { NZTProTheme { V12Reader(book, lib) { finish() } } }
     }
 }
 
 @Composable
-private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit) {
+private fun V12Reader(initial: V10Book, library: V10Library, onClose: () -> Unit) {
     val context = LocalContext.current
     val prefs = remember { V11ReaderPrefs(context) }
     var book by remember { mutableStateOf(initial) }
@@ -91,30 +89,75 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
     var search by remember { mutableStateOf("") }
     var text by remember { mutableStateOf("") }
     var loading by remember { mutableStateOf(true) }
+    var pageStart by remember { mutableIntStateOf(0) }
+    var pageEnd by remember { mutableIntStateOf(0) }
+    var history by remember { mutableStateOf(listOf(0)) }
+    var historyIndex by remember { mutableIntStateOf(0) }
 
     LaunchedEffect(initial.path) {
-        text = loadV10Text(File(initial.path), initial.type)
+        val loaded = loadV10Text(File(initial.path), initial.type)
+            .replace("\r\n", "\n")
+            .replace(Regex("\n{4,}"), "\n\n")
+        text = loaded
+        val restored = when {
+            initial.position > 120 -> initial.position
+            initial.progress > 0 -> (loaded.length * (initial.progress / 100f)).roundToInt()
+            else -> 0
+        }.coerceIn(0, loaded.length.coerceAtLeast(1) - 1)
+        pageStart = snapToWordStart(loaded, restored)
+        pageEnd = pageStart
+        history = listOf(pageStart)
+        historyIndex = 0
         loading = false
     }
 
-    val charsPerPage = remember(font, margin, line) {
-        (3500f * (18f / font.coerceAtLeast(12)) * (1.55f / line.coerceAtLeast(1.15f)) * (26f / margin.coerceAtLeast(12))).roundToInt().coerceIn(1200, 5200)
-    }
-    val pages = remember(text, charsPerPage) { smartPages(text, charsPerPage) }
-    var page by remember(pages.size) { mutableIntStateOf(initial.position.coerceIn(0, (pages.size - 1).coerceAtLeast(0))) }
     val palette = theme.palette()
+    val progress = if (text.isBlank()) 0 else ((pageStart * 100f) / text.length).roundToInt().coerceIn(0, 100)
 
     fun savePrefs() {
-        prefs.theme = theme; prefs.font = font; prefs.line = line; prefs.margin = margin; prefs.justify = justify
+        prefs.theme = theme
+        prefs.font = font
+        prefs.line = line
+        prefs.margin = margin
+        prefs.justify = justify
     }
 
-    LaunchedEffect(page, pages.size) {
-        val updated = book.copy(
-            position = page,
-            progress = (((page + 1) * 100f) / pages.size.coerceAtLeast(1)).roundToInt().coerceIn(0, 100)
-        )
-        book = updated
-        library.update(updated)
+    fun moveTo(offset: Int, addHistory: Boolean = true) {
+        if (text.isBlank()) return
+        val next = offset.coerceIn(0, text.lastIndex.coerceAtLeast(0))
+        pageStart = next
+        pageEnd = next
+        if (addHistory) {
+            val base = history.take(historyIndex + 1)
+            history = (base + next).distinct()
+            historyIndex = history.lastIndex
+        }
+    }
+
+    fun nextPage() {
+        if (pageEnd <= pageStart || pageEnd >= text.length) return
+        moveTo(pageEnd)
+    }
+
+    fun previousPage() {
+        if (historyIndex > 0) {
+            historyIndex--
+            pageStart = history[historyIndex]
+            pageEnd = pageStart
+        } else if (pageStart > 0) {
+            val approx = (pageStart - 900).coerceAtLeast(0)
+            moveTo(snapToWordStart(text, approx), addHistory = false)
+            history = listOf(pageStart)
+            historyIndex = 0
+        }
+    }
+
+    LaunchedEffect(pageStart, text.length) {
+        if (text.isNotBlank()) {
+            val updated = book.copy(position = pageStart, progress = progress)
+            book = updated
+            library.update(updated)
+        }
     }
     DisposableEffect(Unit) { onDispose { savePrefs() } }
 
@@ -131,14 +174,16 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
                         IconButton(onClick = onClose) { Icon(Icons.Default.ArrowBack, null, tint = palette.text) }
                         Column(Modifier.weight(1f)) {
                             Text(book.title, color = palette.text, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                            Text("${page + 1}/${pages.size.coerceAtLeast(1)}  •  ${book.progress}%", color = palette.muted, fontSize = 10.sp)
+                            Text("$progress% • позиция ${pageStart + 1}", color = palette.muted, fontSize = 10.sp)
                         }
-                        IconButton(onClick = { searchOpen = !searchOpen }) { Icon(Icons.Default.Search, null, tint = palette.text) }
+                        IconButton(onClick = { searchOpen = true }) { Icon(Icons.Default.Search, null, tint = palette.text) }
                         IconButton(onClick = {
-                            book = book.copy(bookmarks = if (page in book.bookmarks) book.bookmarks - page else book.bookmarks + page)
+                            book = book.copy(bookmarks = if (pageStart in book.bookmarks) book.bookmarks - pageStart else book.bookmarks + pageStart)
                             library.update(book)
-                        }) { Icon(if (page in book.bookmarks) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = NztAccent) }
-                        IconButton(onClick = { settings = !settings }) { Icon(Icons.Default.Tune, null, tint = palette.text) }
+                        }) {
+                            Icon(if (pageStart in book.bookmarks) Icons.Default.Bookmark else Icons.Default.BookmarkBorder, null, tint = NztAccent)
+                        }
+                        IconButton(onClick = { settings = true }) { Icon(Icons.Default.Tune, null, tint = palette.text) }
                     }
                 }
             }
@@ -148,13 +193,19 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
                 Surface(color = palette.outside.copy(alpha = .98f)) {
                     Column(Modifier.navigationBarsPadding().padding(horizontal = 14.dp, vertical = 8.dp)) {
                         Slider(
-                            value = page.toFloat(),
-                            onValueChange = { page = it.roundToInt().coerceIn(0, (pages.size - 1).coerceAtLeast(0)) },
-                            valueRange = 0f..(pages.size - 1).coerceAtLeast(0).toFloat()
+                            value = pageStart.toFloat(),
+                            onValueChange = {
+                                val target = snapToWordStart(text, it.roundToInt())
+                                moveTo(target, addHistory = false)
+                                history = listOf(target)
+                                historyIndex = 0
+                            },
+                            valueRange = 0f..text.lastIndex.coerceAtLeast(1).toFloat()
                         )
                         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("${book.progress}%", color = palette.muted, fontSize = 10.sp)
-                            Text("≈ ${((pages.size - page).coerceAtLeast(0) * 2)} мин", color = palette.muted, fontSize = 10.sp)
+                            Text("$progress%", color = palette.muted, fontSize = 10.sp)
+                            val minutes = (((text.length - pageStart).coerceAtLeast(0) / 850f) * 2f).roundToInt().coerceAtLeast(1)
+                            Text("≈ $minutes мин", color = palette.muted, fontSize = 10.sp)
                         }
                     }
                 }
@@ -173,27 +224,42 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
                     color = palette.page,
                     shape = RoundedCornerShape(if (theme == V11Theme.OLED) 0.dp else 5.dp)
                 ) {
-                    Box(Modifier.fillMaxSize()) {
+                    BoxWithConstraints(Modifier.fillMaxSize()) {
+                        val lineDp = (font * line).coerceAtLeast(16f)
+                        val usableHeight = (maxHeight.value - 42f).coerceAtLeast(120f)
+                        val maxLines = (usableHeight / lineDp).toInt().coerceAtLeast(4)
+                        val candidateEnd = (pageStart + 10000).coerceAtMost(text.length)
+                        val candidate = if (pageStart < text.length) text.substring(pageStart, candidateEnd) else ""
+
                         Text(
-                            text = pages.getOrElse(page) { "" },
+                            text = candidate,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .verticalScroll(rememberScrollState())
                                 .padding(horizontal = margin.dp, vertical = 20.dp),
                             color = palette.text,
                             fontSize = font.sp,
                             lineHeight = (font * line).sp,
                             fontFamily = FontFamily.Serif,
-                            textAlign = if (justify) TextAlign.Justify else TextAlign.Start
+                            textAlign = if (justify) TextAlign.Justify else TextAlign.Start,
+                            maxLines = maxLines,
+                            overflow = TextOverflow.Clip,
+                            onTextLayout = { result ->
+                                if (result.lineCount > 0) {
+                                    val visible = result.getLineEnd(result.lineCount - 1, visibleEnd = true)
+                                    val absolute = (pageStart + visible).coerceIn(pageStart, text.length)
+                                    if (absolute > pageStart) pageEnd = absolute
+                                }
+                            }
                         )
+
                         Row(Modifier.fillMaxSize()) {
-                            Box(Modifier.weight(.27f).fillMaxHeight().clickable { if (page > 0) page-- })
+                            Box(Modifier.weight(.27f).fillMaxHeight().clickable { previousPage() })
                             Box(Modifier.weight(.46f).fillMaxHeight().clickable { controls = !controls })
-                            Box(Modifier.weight(.27f).fillMaxHeight().clickable { if (page < pages.lastIndex) page++ })
+                            Box(Modifier.weight(.27f).fillMaxHeight().clickable { nextPage() })
                         }
                         Text(
-                            "${page + 1}",
-                            color = palette.muted.copy(alpha = .65f),
+                            "$progress%",
+                            color = palette.muted.copy(alpha = .7f),
                             fontSize = 10.sp,
                             modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 5.dp)
                         )
@@ -219,16 +285,16 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
                 }
                 Spacer(Modifier.height(10.dp))
                 Text("Шрифт  $font", fontWeight = FontWeight.Bold)
-                Slider(font.toFloat(), { font = it.roundToInt() }, valueRange = 14f..32f)
+                Slider(font.toFloat(), { font = it.roundToInt() }, valueRange = 14f..30f)
                 Text("Интервал  ${"%.1f".format(line)}", fontWeight = FontWeight.Bold)
-                Slider(line, { line = it }, valueRange = 1.2f..2.0f)
+                Slider(line, { line = it }, valueRange = 1.2f..1.9f)
                 Text("Поля  $margin", fontWeight = FontWeight.Bold)
-                Slider(margin.toFloat(), { margin = it.roundToInt() }, valueRange = 12f..42f)
+                Slider(margin.toFloat(), { margin = it.roundToInt() }, valueRange = 12f..38f)
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                     Text("Выравнивание как в книге", Modifier.weight(1f), fontWeight = FontWeight.Bold)
                     Switch(justify, { justify = it })
                 }
-                Text("Нажатие слева/справа листает страницу, по центру скрывает панели.", color = NztMuted, fontSize = 11.sp, modifier = Modifier.padding(vertical = 12.dp))
+                Text("В v12 страница заканчивается ровно там, где заканчивается видимый текст. Следующая страница начинается с первого непрочитанного символа.", color = NztMuted, fontSize = 11.sp, modifier = Modifier.padding(vertical = 12.dp))
             }
         }
     }
@@ -244,9 +310,15 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
                 Button(onClick = {
                     val q = search.trim()
                     if (q.isNotEmpty()) {
-                        val found = pages.indices.drop(page + 1).firstOrNull { pages[it].contains(q, true) }
-                            ?: pages.indices.take(page + 1).firstOrNull { pages[it].contains(q, true) }
-                        if (found != null) page = found
+                        val found = text.indexOf(q, startIndex = (pageStart + 1).coerceAtMost(text.length), ignoreCase = true)
+                            .takeIf { it >= 0 }
+                            ?: text.indexOf(q, ignoreCase = true).takeIf { it >= 0 }
+                        if (found != null) {
+                            val target = snapToWordStart(text, found)
+                            moveTo(target, addHistory = false)
+                            history = listOf(target)
+                            historyIndex = 0
+                        }
                     }
                     searchOpen = false
                 }) { Text("Найти") }
@@ -257,21 +329,9 @@ private fun V11Reader(initial: V10Book, library: V10Library, onClose: () -> Unit
     }
 }
 
-private fun smartPages(text: String, target: Int): List<String> {
-    if (text.isBlank()) return listOf("")
-    val clean = text.replace("\r\n", "\n").replace(Regex("\n{4,}"), "\n\n")
-    val out = mutableListOf<String>()
-    var start = 0
-    while (start < clean.length) {
-        var end = (start + target).coerceAtMost(clean.length)
-        if (end < clean.length) {
-            val floor = (start + target * .70).roundToInt()
-            val candidates = listOf(clean.lastIndexOf("\n\n", end), clean.lastIndexOf(". ", end), clean.lastIndexOf("! ", end), clean.lastIndexOf("? ", end))
-            val best = candidates.filter { it >= floor }.maxOrNull()
-            if (best != null) end = if (clean.startsWith("\n\n", best)) best + 2 else best + 2
-        }
-        out += clean.substring(start, end).trim()
-        start = end
-    }
-    return out.ifEmpty { listOf("") }
+private fun snapToWordStart(text: String, offset: Int): Int {
+    if (text.isBlank()) return 0
+    var i = offset.coerceIn(0, text.lastIndex)
+    while (i > 0 && !text[i - 1].isWhitespace()) i--
+    return i
 }

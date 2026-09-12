@@ -21,10 +21,20 @@ if block in s:s=s.replace(block,'',1)
 marker='\n@Composable\nfun ExercisePhoto'
 if 'fun exerciseMediaLabel' not in s:s=s.replace(marker,'\nfun exerciseMediaLabel(name: String): String = mediaFor(name).label\n'+marker,1)
 p.write_text(s)
+
 p=Path('app/src/main/java/com/nzt365/app/V7Product.kt')
-s=p.read_text().replace('ExercisePhoto(plan.session.exercises.firstOrNull()?.name ?: plan.session.title, Modifier.fillMaxWidth().height(220.dp))','ExercisePhoto(plan.session.title, Modifier.fillMaxWidth().height(220.dp))')
+s=p.read_text()
+s=s.replace('ExercisePhoto(plan.session.exercises.firstOrNull()?.name ?: plan.session.title, Modifier.fillMaxWidth().height(220.dp))','ExercisePhoto(plan.session.title, Modifier.fillMaxWidth().height(220.dp))')
+s=s.replace('V7WorkoutActivity::class.java','V12WorkoutActivity::class.java')
 p.write_text(s)
+
 p=Path('app/src/main/java/com/nzt365/app/V9PerformanceHub.kt')
 s=p.read_text().replace('Text("V9", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = NztAccent, fontWeight = FontWeight.Black)','Text("v${BuildConfig.VERSION_NAME}", Modifier.padding(horizontal = 10.dp, vertical = 7.dp), color = NztAccent, fontWeight = FontWeight.Black)')
 p.write_text(s)
-print('media patched')
+
+p=Path('app/src/main/AndroidManifest.xml')
+s=p.read_text()
+if '.V12WorkoutActivity' not in s:
+    s=s.replace('<activity android:name=".V7WorkoutActivity" android:screenOrientation="portrait" />','<activity android:name=".V7WorkoutActivity" android:screenOrientation="portrait" />\n        <activity android:name=".V12WorkoutActivity" android:screenOrientation="portrait" />')
+p.write_text(s)
+print('media and routing patched')

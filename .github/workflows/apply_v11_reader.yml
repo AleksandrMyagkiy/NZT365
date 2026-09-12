@@ -5,7 +5,6 @@ on:
   push:
     branches: [ nzt-v12 ]
     paths:
-      - 'tools/apply_v11_reader.py'
       - 'tools/activate_v12.py'
       - '.github/workflows/apply_v11_reader.yml'
 
@@ -19,15 +18,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           ref: nzt-v12
-      - name: Apply workout polish
-        run: python tools/apply_v11_reader.py
       - name: Activate v12 workout
         run: python tools/activate_v12.py
       - name: Commit integration
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add app/src/main/java/com/nzt365/app/V7Workout.kt app/src/main/java/com/nzt365/app/V7Product.kt app/src/main/AndroidManifest.xml
+          git add app/src/main/java/com/nzt365/app/V7Product.kt app/src/main/AndroidManifest.xml
           if ! git diff --cached --quiet; then
             git commit -m "Activate NZT v12 workout experience"
             git push

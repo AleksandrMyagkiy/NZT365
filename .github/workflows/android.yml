@@ -3,7 +3,7 @@ name: Build NZT365 Release APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main, master, nzt-v13 ]
+    branches: [ main, master, nzt-v14 ]
 
 jobs:
   build:
@@ -12,11 +12,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Apply v13 routes
+      - name: Apply current product routes
         run: python tools/v13_routes.py
 
-      - name: Apply v13 compile fixes
+      - name: Apply nutrition compile fixes
         run: python tools/v13_compile_fix.py
+
+      - name: Apply v14 reader and workout polish
+        run: python tools/v14_polish.py
 
       - uses: actions/setup-java@v4
         with:
@@ -46,9 +49,9 @@ jobs:
         run: gradle :app:assembleRelease --stacktrace
 
       - name: Rename APK
-        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v13.0.0.apk
+        run: cp app/build/outputs/apk/release/app-release.apk NZT365-v14.0.0.apk
 
       - uses: actions/upload-artifact@v4
         with:
-          name: NZT365-v13.0.0
-          path: NZT365-v13.0.0.apk
+          name: NZT365-v14.0.0
+          path: NZT365-v14.0.0.apk

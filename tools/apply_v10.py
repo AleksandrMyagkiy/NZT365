@@ -3,7 +3,6 @@ import re
 
 root = Path('.')
 
-# ---- V7 shell: Reader 10 + dynamic version + full reset ----
 p = root/'app/src/main/java/com/nzt365/app/V7Product.kt'
 s = p.read_text(encoding='utf-8')
 s = s.replace('V7Tab.GROWTH -> V5BooksScreen(lang, Modifier.fillMaxSize())', 'V7Tab.GROWTH -> V10BooksScreen(lang, Modifier.fillMaxSize())')
@@ -30,9 +29,7 @@ private fun V7Settings(
                 Column(Modifier.padding(16.dp)) {
                     OutlinedTextField(name, { name = it.take(28) }, modifier = Modifier.fillMaxWidth(), label = { Text(v7Text(lang, "Имя", "Name", "Imię", "Ім'я")) })
                     Spacer(Modifier.height(8.dp))
-                    Button(onClick = { profile.setName(name); onProfileChanged() }, modifier = Modifier.fillMaxWidth()) {
-                        Text(v7Text(lang, "Сохранить", "Save", "Zapisz", "Зберегти"))
-                    }
+                    Button(onClick = { profile.setName(name); onProfileChanged() }, modifier = Modifier.fillMaxWidth()) { Text(v7Text(lang, "Сохранить", "Save", "Zapisz", "Зберегти")) }
                 }
             }
         }
@@ -74,12 +71,7 @@ private fun V7Settings(
             Surface(color = NztSurface2, shape = RoundedCornerShape(16.dp)) {
                 Column(Modifier.padding(14.dp)) {
                     Text("NZT 365 v${BuildConfig.VERSION_NAME}", color = NztAccent, fontWeight = FontWeight.Black)
-                    Text(v7Text(lang,
-                        "Версия определяется автоматически. Данные хранятся локально на устройстве.",
-                        "Version is detected automatically. Data is stored locally on this device.",
-                        "Wersja jest wykrywana automatycznie. Dane są przechowywane lokalnie.",
-                        "Версія визначається автоматично. Дані зберігаються локально."),
-                        color = NztMuted, fontSize = 11.sp)
+                    Text(v7Text(lang, "Версия определяется автоматически. Данные хранятся локально на устройстве.", "Version is detected automatically. Data is stored locally on this device.", "Wersja jest wykrywana automatycznie. Dane są przechowywane lokalnie.", "Версія визначається автоматично. Дані зберігаються локально."), color = NztMuted, fontSize = 11.sp)
                 }
             }
         }
@@ -89,11 +81,7 @@ private fun V7Settings(
         AlertDialog(
             onDismissRequest = { showReset = false },
             title = { Text(v7Text(lang, "Точно начать сначала?", "Start from zero?", "Na pewno zacząć od zera?", "Точно почати спочатку?"), fontWeight = FontWeight.Black) },
-            text = { Text(v7Text(lang,
-                "Будут удалены все результаты, история тренировок, замеры, питание, заметки и загруженные книги. Это действие нельзя отменить.",
-                "All progress, workout history, measurements, nutrition, notes and imported books will be deleted. This cannot be undone.",
-                "Cały postęp, historia treningów, pomiary, odżywianie, notatki i zaimportowane książki zostaną usunięte. Tej operacji nie można cofnąć.",
-                "Увесь прогрес, історія тренувань, заміри, харчування, нотатки та завантажені книги будуть видалені. Дію не можна скасувати.")) },
+            text = { Text(v7Text(lang, "Будут удалены все результаты, история тренировок, замеры, питание, заметки и загруженные книги. Это действие нельзя отменить.", "All progress, workout history, measurements, nutrition, notes and imported books will be deleted. This cannot be undone.", "Cały postęp, historia treningów, pomiary, odżywianie, notatki i zaimportowane książki zostaną usunięte. Tej operacji nie można cofnąć.", "Увесь прогрес, історія тренувань, заміри, харчування, нотатки та завантажені книги будуть видалені. Дію не можна скасувати.")) },
             confirmButton = { Button(onClick = { showReset = false; V10Reset.everything(context) }) { Text(v7Text(lang, "УДАЛИТЬ И НАЧАТЬ", "DELETE & RESTART", "USUŃ I ZACZNIJ", "ВИДАЛИТИ Й ПОЧАТИ")) } },
             dismissButton = { TextButton(onClick = { showReset = false }) { Text(v7Text(lang, "Отмена", "Cancel", "Anuluj", "Скасувати")) } },
             containerColor = NztSurface
@@ -108,7 +96,6 @@ if n != 1:
     raise SystemExit(f'Could not replace V7Settings, matches={n}')
 p.write_text(s2, encoding='utf-8')
 
-# ---- Performance hub button: small floating action, never covers navigation/content ----
 p = root/'app/src/main/java/com/nzt365/app/V9PerformanceHub.kt'
 s = p.read_text(encoding='utf-8')
 old = '''            Surface(
@@ -129,31 +116,14 @@ old = '''            Surface(
             }'''
 new = '''            FloatingActionButton(
                 onClick = { showHub = true },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .navigationBarsPadding()
-                    .padding(end = 14.dp, bottom = 92.dp)
-                    .size(50.dp),
+                modifier = Modifier.align(Alignment.BottomEnd).navigationBarsPadding().padding(end = 14.dp, bottom = 92.dp).size(50.dp),
                 containerColor = NztAccent,
                 contentColor = Color.Black,
                 shape = RoundedCornerShape(17.dp)
-            ) {
-                Icon(Icons.Default.Insights, "Performance Lab", modifier = Modifier.size(24.dp))
-            }'''
-if old not in s: raise SystemExit('LAB block not found')
-s=s.replace(old,new)
-p.write_text(s,encoding='utf-8')
+            ) { Icon(Icons.Default.Insights, "Performance Lab", modifier = Modifier.size(24.dp)) }'''
+if old not in s:
+    raise SystemExit('LAB block not found')
+s = s.replace(old, new)
+p.write_text(s, encoding='utf-8')
 
-# ---- Main version comments/root stays stable ----
-p = root/'app/src/main/java/com/nzt365/app/MainActivity.kt'
-s=p.read_text(encoding='utf-8').replace('NZT9Root(repo, profileStore)', 'NZT9Root(repo, profileStore)')
-p.write_text(s,encoding='utf-8')
-
-# ---- Build artifact naming / feature branch ----
-p = root/'.github/workflows/android.yml'
-s=p.read_text(encoding='utf-8')
-s=s.replace('branches: [ main, master, nzt-v9-adaptive-reader ]','branches: [ main, master, nzt-v10-reader-reset-brand ]')
-s=s.replace('NZT365-v9.0.0.apk','NZT365-v10.0.0.apk').replace('name: NZT365-v9.0.0','name: NZT365-v10.0.0')
-p.write_text(s,encoding='utf-8')
-
-print('NZT v10 integration patch applied')
+print('NZT v10 source integration applied')

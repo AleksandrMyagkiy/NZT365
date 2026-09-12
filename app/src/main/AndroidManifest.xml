@@ -16,8 +16,9 @@
         <activity android:name=".V10ReaderActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".V13NutritionActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
 
+        <activity android:name=".V13WorkoutActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".V12WorkoutActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
-        <activity-alias android:name=".V7WorkoutActivity" android:targetActivity=".V12WorkoutActivity" android:exported="false" />
+        <activity-alias android:name=".V7WorkoutActivity" android:targetActivity=".V13WorkoutActivity" android:exported="false" />
         <activity android:name=".V4WorkoutActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ProWorkoutActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />
         <activity android:name=".ProNutritionActivity" android:exported="false" android:screenOrientation="portrait" android:windowSoftInputMode="adjustResize" />

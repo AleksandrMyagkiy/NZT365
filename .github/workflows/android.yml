@@ -15,6 +15,9 @@ jobs:
       - name: Apply v13 routes
         run: python tools/v13_routes.py
 
+      - name: Apply v13 compile fixes
+        run: python tools/v13_compile_fix.py
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin

@@ -1,1 +1,1 @@
-NZT 365 v11.0.0 Reader Pro clean release build trigger.
+NZT 365 v12.0.0 integrated reader and workout release build trigger.

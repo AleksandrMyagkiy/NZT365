@@ -12,8 +12,8 @@ android {
         applicationId = "com.nzt365.app"
         minSdk = 26
         targetSdk = 35
-        versionCode = 26
-        versionName = "10.0.0"
+        versionCode = 27
+        versionName = "11.0.0"
     }
 
     signingConfigs {

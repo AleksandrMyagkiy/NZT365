@@ -1,0 +1,31 @@
+name: Apply NZT v11 reader
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ nzt-v11-reader-pro ]
+    paths:
+      - 'tools/apply_v11_reader.py'
+      - '.github/workflows/apply_v11_reader.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: nzt-v11-reader-pro
+      - name: Apply Reader Pro patch
+        run: python tools/apply_v11_reader.py
+      - name: Commit integration
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/src/main/java/com/nzt365/app/V10Reader.kt
+          if ! git diff --cached --quiet; then
+            git commit -m "Integrate NZT Reader Pro"
+            git push
+          fi

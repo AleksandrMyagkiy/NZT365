@@ -330,7 +330,7 @@ private fun V7Today(repo: NZTRepository, name: String, lang: AppLanguage) {
                     }
                     Column(Modifier.padding(16.dp)) {
                         Button(
-                            onClick = { context.startActivity(Intent(context, V7WorkoutActivity::class.java).putExtra("date", date.toString())) },
+                            onClick = { context.startActivity(Intent(context, V12WorkoutActivity::class.java).putExtra("date", date.toString())) },
                             modifier = Modifier.fillMaxWidth().height(56.dp),
                             shape = RoundedCornerShape(17.dp)
                         ) {
@@ -484,7 +484,7 @@ private fun V7Body(repo: NZTRepository, lang: AppLanguage) {
                         Text(plan.phase.focus, color = NztMuted, fontSize = 12.sp)
                         Spacer(Modifier.height(12.dp))
                         Button(
-                            onClick = { context.startActivity(Intent(context, V7WorkoutActivity::class.java).putExtra("date", date.toString())) },
+                            onClick = { context.startActivity(Intent(context, V12WorkoutActivity::class.java).putExtra("date", date.toString())) },
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(v7Text(lang, "ТРЕНИРОВАТЬСЯ", "TRAIN NOW", "TRENUJ", "ТРЕНУВАТИСЯ"), fontWeight = FontWeight.Black)

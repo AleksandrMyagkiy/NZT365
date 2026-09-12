@@ -30,12 +30,16 @@ private data class ExerciseMedia(
 private fun mediaFor(name: String): ExerciseMedia {
     val s = name.lowercase()
     return when {
-        listOf("велосип", "bike", "cycling", "cadence").any { it in s } -> ExerciseMedia(
+        listOf(
+            "велосип", "bike", "cycling", "cadence", "каденс", "поездка", "поїздка", "z2",
+            "педал", "отрезок", "відрізок", "рабочие интервалы", "робочі інтервали",
+            "интервалы", "інтервали", "ускорения", "прискорення", "лёгким ходом", "легким ходом"
+        ).any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1541625602330-2277a4c46182?auto=format&fit=crop&w=1400&q=90",
             "CYCLING",
             Icons.Default.PedalBike
         )
-        listOf("ходь", "ходом", "walk", "walking", "recovery walk", "cooldown walk").any { it in s } -> ExerciseMedia(
+        listOf("ходь", "walk", "walking", "recovery walk", "cooldown walk", "прогул", "прогулян").any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1476480862126-209bfaa8edc8?auto=format&fit=crop&w=1400&q=90",
             "WALK / RECOVERY",
             Icons.Default.DirectionsWalk
@@ -60,22 +64,22 @@ private fun mediaFor(name: String): ExerciseMedia {
             "CHEST PRESS",
             Icons.Default.FitnessCenter
         )
-        listOf("гантел", "dumbbell", "curl", "shoulder press", "lateral raise").any { it in s } -> ExerciseMedia(
+        listOf("гантел", "dumbbell", "curl", "shoulder press", "lateral raise", "сгибание рук", "молотков").any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1583454110551-21f2fa2afe61?auto=format&fit=crop&w=1400&q=90",
             "DUMBBELLS",
             Icons.Default.FitnessCenter
         )
-        listOf("barbell", "штанг", "romanian", "deadlift", "румын").any { it in s } -> ExerciseMedia(
+        listOf("barbell", "штанг", "romanian", "deadlift", "румын", "румун").any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1400&q=90",
-            "BARBELL",
+            "HINGE / BARBELL",
             Icons.Default.FitnessCenter
         )
-        listOf("тяга", "row", "band row", "australian row").any { it in s } -> ExerciseMedia(
-            "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1400&q=90",
+        listOf("тяга", "row", "band row", "australian row", "face pull").any { it in s } -> ExerciseMedia(
+            "https://images.unsplash.com/photo-1599058917765-a780eda07a3e?auto=format&fit=crop&w=1400&q=90",
             "ROW / PULL",
             Icons.Default.FitnessCenter
         )
-        listOf("присед", "squat", "выпад", "lunge", "split squat").any { it in s } -> ExerciseMedia(
+        listOf("присед", "squat", "выпад", "lunge", "split squat", "болгар", "шаг на", "step-up", "ягодич").any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1400&q=90",
             "LOWER BODY",
             Icons.Default.FitnessCenter
@@ -85,7 +89,7 @@ private fun mediaFor(name: String): ExerciseMedia {
             "PLANK",
             Icons.Default.SelfImprovement
         )
-        listOf("core", "пресс", "dead bug", "bird-dog", "knee raise", "raise").any { it in s } -> ExerciseMedia(
+        listOf("core", "пресс", "dead bug", "bird-dog", "knee raise", "ролик", "hollow").any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1400&q=90",
             "CORE",
             Icons.Default.SelfImprovement
@@ -95,14 +99,17 @@ private fun mediaFor(name: String): ExerciseMedia {
             "RUNNING",
             Icons.Default.DirectionsRun
         )
-        listOf("размин", "warm", "mobility", "мобиль", "stretch", "flow").any { it in s } -> ExerciseMedia(
+        listOf(
+            "размин", "замин", "warm", "cooldown", "mobility", "мобиль", "stretch", "flow",
+            "дыхание", "дихання", "втягивание подбородка", "повороты грудного", "растяжка", "розтяжка"
+        ).any { it in s } -> ExerciseMedia(
             "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1400&q=90",
             "WARM-UP / MOBILITY",
             Icons.Default.SelfImprovement
         )
         else -> ExerciseMedia(
-            "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1400&q=90",
-            "TRAINING",
+            "",
+            "EXERCISE",
             Icons.Default.FitnessCenter
         )
     }
@@ -152,9 +159,7 @@ fun ExerciseThumbnail(name: String, modifier: Modifier = Modifier) {
         ExerciseImageLayer(media)
         Box(
             Modifier.fillMaxSize().background(
-                Brush.verticalGradient(
-                    listOf(Color.Transparent, Color(0x66071018))
-                )
+                Brush.verticalGradient(listOf(Color.Transparent, Color(0x66071018)))
             )
         )
     }
@@ -162,6 +167,10 @@ fun ExerciseThumbnail(name: String, modifier: Modifier = Modifier) {
 
 @Composable
 private fun ExerciseImageLayer(media: ExerciseMedia) {
+    if (media.url.isBlank()) {
+        PremiumMediaFallback(media)
+        return
+    }
     SubcomposeAsyncImage(
         model = media.url,
         contentDescription = media.label,
@@ -180,26 +189,14 @@ private fun PremiumMediaFallback(media: ExerciseMedia) {
     Box(
         Modifier.fillMaxSize().background(
             Brush.linearGradient(
-                listOf(
-                    Color(0xFF152A38),
-                    Color(0xFF0B1720),
-                    Color(0xFF192219)
-                )
+                listOf(Color(0xFF152A38), Color(0xFF0B1720), Color(0xFF17231D))
             )
         ),
         contentAlignment = Alignment.Center
     ) {
-        Surface(
-            color = Color(0x331F3D4B),
-            shape = RoundedCornerShape(24.dp)
-        ) {
+        Surface(color = Color(0x331F3D4B), shape = RoundedCornerShape(24.dp)) {
             Box(Modifier.size(88.dp), contentAlignment = Alignment.Center) {
-                Icon(
-                    media.icon,
-                    contentDescription = null,
-                    tint = NztAccent,
-                    modifier = Modifier.size(46.dp)
-                )
+                Icon(media.icon, null, tint = NztAccent, modifier = Modifier.size(46.dp))
             }
         }
     }

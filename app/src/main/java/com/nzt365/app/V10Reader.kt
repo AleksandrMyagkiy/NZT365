@@ -183,7 +183,7 @@ fun V10BooksScreen(lang: AppLanguage, modifier: Modifier = Modifier) {
 
 class V10ReaderActivity: ComponentActivity() {
     companion object {
-        fun intent(c:Context,b:V10Book)=Intent(c,V10ReaderActivity::class.java).apply { putExtra("id",b.id);putExtra("title",b.title);putExtra("path",b.path);putExtra("type",b.type) }
+        internal fun intent(c:Context,b:V10Book)=Intent(c,V10ReaderActivity::class.java).apply { putExtra("id",b.id);putExtra("title",b.title);putExtra("path",b.path);putExtra("type",b.type) }
     }
     override fun onCreate(savedInstanceState:Bundle?){ super.onCreate(savedInstanceState); val lib=V10Library(this); val id=intent.getStringExtra("id")?:return finish(); val book=lib.books().firstOrNull{it.id==id}?:return finish(); setContent { NZTProTheme { V10Reader(book,lib){finish()} } } }
 }
@@ -210,8 +210,65 @@ private fun stripFb2(s:String):String=stripHtml(s.replace(Regex("<binary[\\s\\S]
 private fun zipText(file:File,exts:Set<String>):String{val out=mutableListOf<String>();ZipFile(file).use{z->z.entries().toList().filter{!it.isDirectory&&it.name.substringAfterLast('.').lowercase() in exts}.sortedBy{it.name}.forEach{e->val t=stripHtml(decodeText(z.getInputStream(e).readBytes()));if(t.isNotBlank())out+=t}};return out.joinToString("\n\n")}
 private fun parseRtf(s:String):String{s.replace(Regex("\\\\'([0-9a-fA-F]{2})")){m->m.groupValues[1].toInt(16).toChar().toString()}.let{r->return r.replace(Regex("\\\\par[d]? ?"),"\n").replace(Regex("\\\\[a-zA-Z]+-?\\d* ?"),"").replace("{","").replace("}","").replace(Regex("\n{3,}"),"\n\n").trim()}}
 private fun extractDocText(b:ByteArray):String{val utf16=runCatching{String(b,Charsets.UTF_16LE)}.getOrDefault("");val runs=Regex("[\\p{L}\\p{N}\\p{Punct} \\t\\r\\n]{20,}").findAll(utf16).map{it.value}.toList();if(runs.joinToString().length>200)return runs.joinToString("\n");return b.map{(it.toInt() and 0xff).toChar()}.joinToString("").replace(Regex("[^\\p{L}\\p{N}\\p{Punct} \\r\\n\\t]")," ").replace(Regex(" {3,}")," ")}
-private fun parseMobi(data:ByteArray):String{if(data.size<100)return "";val records=((data[76].toInt()and255)shl8)or(data[77].toInt()and255);if(records<2)return "";fun off(i:Int):Int{val p=78+i*8;if(p+3>=data.size)return data.size;return ((data[p].toInt()and255)shl24)or((data[p+1].toInt()and255)shl16)or((data[p+2].toInt()and255)shl8)or(data[p+3].toInt()and255)};val r0=off(0);if(r0+16>data.size)return "";val comp=((data[r0].toInt()and255)shl8)or(data[r0+1].toInt()and255);val textRecords=((data[r0+8].toInt()and255)shl8)or(data[r0+9].toInt()and255);val out=ByteArrayOutputStream();for(i in 1..textRecords.coerceAtMost(records-1)){val a=off(i).coerceIn(0,data.size);val z=if(i+1<records)off(i+1).coerceIn(a,data.size)else data.size;val rec=data.copyOfRange(a,z);out.write(if(comp==2)palmDoc(rec)else rec)};return stripHtml(decodeText(out.toByteArray()))}
-private fun palmDoc(src:ByteArray):ByteArray{val out=ByteArrayOutputStream();var i=0;while(i<src.size){val c=src[i].toInt()and255;i++;when{c==0->out.write(0);c in 1..8->{repeat(c){if(i<src.size)out.write(src[i++].toInt())}};c in 9..127->out.write(c);c in 128..191&&i<src.size->{val c2=src[i++].toInt()and255;val v=(c shl8)or c2;val distance=(v shr3)and0x7ff;val length=(v and7)+3;val buf=out.toByteArray();repeat(length){val idx=buf.size-distance+(it%distance.coerceAtLeast(1));if(idx in buf.indices)out.write(buf[idx].toInt())}};c>=192->{out.write(' '.code);out.write((c xor 0x80))}}};return out.toByteArray()}
+private fun parseMobi(data: ByteArray): String {
+    if (data.size < 100) return ""
+    val records = ((data[76].toInt() and 255) shl 8) or (data[77].toInt() and 255)
+    if (records < 2) return ""
+
+    fun off(i: Int): Int {
+        val p = 78 + i * 8
+        if (p + 3 >= data.size) return data.size
+        return ((data[p].toInt() and 255) shl 24) or
+            ((data[p + 1].toInt() and 255) shl 16) or
+            ((data[p + 2].toInt() and 255) shl 8) or
+            (data[p + 3].toInt() and 255)
+    }
+
+    val r0 = off(0)
+    if (r0 + 16 > data.size) return ""
+    val comp = ((data[r0].toInt() and 255) shl 8) or (data[r0 + 1].toInt() and 255)
+    val textRecords = ((data[r0 + 8].toInt() and 255) shl 8) or (data[r0 + 9].toInt() and 255)
+    val out = ByteArrayOutputStream()
+
+    for (i in 1..textRecords.coerceAtMost(records - 1)) {
+        val a = off(i).coerceIn(0, data.size)
+        val z = if (i + 1 < records) off(i + 1).coerceIn(a, data.size) else data.size
+        val rec = data.copyOfRange(a, z)
+        out.write(if (comp == 2) palmDoc(rec) else rec)
+    }
+    return stripHtml(decodeText(out.toByteArray()))
+}
+
+private fun palmDoc(src: ByteArray): ByteArray {
+    val out = ByteArrayOutputStream()
+    var i = 0
+    while (i < src.size) {
+        val c = src[i].toInt() and 255
+        i++
+        when {
+            c == 0 -> out.write(0)
+            c in 1..8 -> repeat(c) { if (i < src.size) out.write(src[i++].toInt()) }
+            c in 9..127 -> out.write(c)
+            c in 128..191 && i < src.size -> {
+                val c2 = src[i++].toInt() and 255
+                val v = (c shl 8) or c2
+                val distance = (v shr 3) and 0x7ff
+                val length = (v and 7) + 3
+                repeat(length) {
+                    val buf = out.toByteArray()
+                    val idx = buf.size - distance
+                    if (distance > 0 && idx in buf.indices) out.write(buf[idx].toInt())
+                }
+            }
+            c >= 192 -> {
+                out.write(' '.code)
+                out.write(c xor 0x80)
+            }
+        }
+    }
+    return out.toByteArray()
+}
+
 private fun pdfCount10(f:File)=runCatching{ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY).use{p->PdfRenderer(p).use{it.pageCount}}}.getOrDefault(0)
 private fun renderPdf10(f:File,index:Int):Bitmap?=runCatching{ParcelFileDescriptor.open(f,ParcelFileDescriptor.MODE_READ_ONLY).use{p->PdfRenderer(p).use{r->r.openPage(index.coerceIn(0,r.pageCount-1)).use{pg->val w=1400;val h=(w*pg.height.toFloat()/pg.width).roundToInt();Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888).also{it.eraseColor(AndroidColor.WHITE);pg.render(it,null,null,PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)}}}}}.getOrNull()
 private fun comicPages(f:File,type:String):List<File>{val dir=File(f.parentFile,"${f.nameWithoutExtension}_pages").apply{mkdirs()};if(dir.listFiles()?.isNotEmpty()==true)return dir.listFiles()!!.filter{it.extension.lowercase()in setOf("jpg","jpeg","png","webp","bmp","gif")}.sortedBy{it.name};runCatching{if(type=="CBZ")ZipFile(f).use{z->z.entries().toList().filter{!it.isDirectory&&it.name.substringAfterLast('.').lowercase()in setOf("jpg","jpeg","png","webp","bmp","gif")}.forEachIndexed{i,e->File(dir,"%05d.%s".format(i,e.name.substringAfterLast('.'))).outputStream().use{o->z.getInputStream(e).use{it.copyTo(o)}}}}else Junrar.extract(f,dir)};return dir.walkTopDown().filter{it.isFile&&it.extension.lowercase()in setOf("jpg","jpeg","png","webp","bmp","gif")}.sortedBy{it.name}.toList()}

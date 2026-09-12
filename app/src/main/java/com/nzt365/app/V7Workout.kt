@@ -184,7 +184,7 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
                     ) {
                         Icon(Icons.Default.Timer, null)
                         Spacer(Modifier.width(6.dp))
-                        Text("REST")
+                        Text("ОТДЫХ")
                     }
                     Button(
                         onClick = { showFinish = true },
@@ -193,7 +193,7 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
                     ) {
                         Icon(Icons.Default.Flag, null)
                         Spacer(Modifier.width(8.dp))
-                        Text("FINISH", fontWeight = FontWeight.Black)
+                        Text("ЗАВЕРШИТЬ", fontWeight = FontWeight.Black)
                     }
                 }
             }
@@ -218,7 +218,7 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
                         Spacer(Modifier.width(10.dp))
                         Column {
                             Text("NZT COACH", color = NztAccent, fontWeight = FontWeight.Black, fontSize = 11.sp)
-                            Text("Use clean form. Log every set. Keep 1–3 RIR on compounds and progress only after completing the prescribed work.", color = NztMuted, fontSize = 12.sp, lineHeight = 17.sp)
+                            Text("Чистая техника, каждый подход в журнале и 1–3 RIR в базовых упражнениях. Прогрессируй только после качественного выполнения плана.", color = NztMuted, fontSize = 12.sp, lineHeight = 17.sp)
                         }
                     }
                 }
@@ -248,13 +248,13 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
                 Modifier.fillMaxWidth().navigationBarsPadding().padding(24.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("REST TIMER", color = NztMuted, fontWeight = FontWeight.Bold)
+                Text("ТАЙМЕР ОТДЫХА", color = NztMuted, fontWeight = FontWeight.Bold)
                 Text(formatTime(restSeconds), fontSize = 64.sp, color = NztAccent, fontWeight = FontWeight.Black)
                 Spacer(Modifier.height(12.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     OutlinedButton(onClick = { restSeconds = (restSeconds - 15).coerceAtLeast(0) }, modifier = Modifier.weight(1f)) { Text("−15") }
                     OutlinedButton(onClick = { restSeconds += 15 }, modifier = Modifier.weight(1f)) { Text("+15") }
-                    Button(onClick = { showRest = false }, modifier = Modifier.weight(1f)) { Text("SKIP") }
+                    Button(onClick = { showRest = false }, modifier = Modifier.weight(1f)) { Text("ПРОПУСТИТЬ") }
                 }
             }
         }
@@ -263,13 +263,13 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
     if (showFinish) {
         AlertDialog(
             onDismissRequest = { showFinish = false },
-            title = { Text("WORKOUT COMPLETE", fontWeight = FontWeight.Black) },
+            title = { Text("ТРЕНИРОВКА ЗАВЕРШЕНА", fontWeight = FontWeight.Black) },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("$doneSets / $totalSets sets • ${(progress * 100).roundToInt()}%")
-                    Text("Volume: ${volume.roundToInt()} kg")
-                    Text("Best estimated 1RM: ${e1rm.roundToInt()} kg")
-                    Text("Previous set values and personal records will be updated.", color = NztMuted)
+                    Text("Объём: ${volume.roundToInt()} kg")
+                    Text("Лучший расчётный 1RM: ${e1rm.roundToInt()} kg")
+                    Text("Результаты подходов и личные рекорды будут сохранены.", color = NztMuted)
                 }
             },
             confirmButton = {
@@ -281,9 +281,9 @@ private fun V7WorkoutScreen(date: LocalDate, onClose: () -> Unit) {
                     }
                     store.markWorkout(date, plan.session.code)
                     onClose()
-                }) { Text("DONE") }
+                }) { Text("ГОТОВО") }
             },
-            dismissButton = { TextButton(onClick = { showFinish = false }) { Text("BACK") } },
+            dismissButton = { TextButton(onClick = { showFinish = false }) { Text("НАЗАД") } },
             containerColor = NztSurface
         )
     }
@@ -323,17 +323,29 @@ private fun V7ExerciseCard(
     var showWarmup by remember { mutableStateOf(false) }
     var note by remember(exercise.name) { mutableStateOf(store.note(exercise.name)) }
 
-    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(26.dp)) {
+    Card(colors = CardDefaults.cardColors(containerColor = NztSurface), shape = RoundedCornerShape(24.dp)) {
         Column {
-            Box {
-                ExercisePhoto(exercise.name, Modifier.fillMaxWidth().height(210.dp))
+            Row(
+                Modifier.fillMaxWidth().padding(14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(shape = RoundedCornerShape(18.dp), modifier = Modifier.size(92.dp)) {
+                    ExerciseThumbnail(exercise.name, Modifier.fillMaxSize())
+                }
+                Spacer(Modifier.width(13.dp))
+                Column(Modifier.weight(1f)) {
+                    Text("УПРАЖНЕНИЕ ${index + 1}", color = NztAccent, fontSize = 9.sp, fontWeight = FontWeight.Black, letterSpacing = 1.sp)
+                    Spacer(Modifier.height(4.dp))
+                    Text(exercise.name, fontSize = 19.sp, fontWeight = FontWeight.Black, maxLines = 3, overflow = TextOverflow.Ellipsis)
+                    Spacer(Modifier.height(5.dp))
+                    Text("${exercise.target} • отдых ${exercise.restSeconds} с", color = NztMuted, fontSize = 11.sp)
+                }
                 Surface(
-                    Modifier.align(Alignment.TopEnd).padding(12.dp),
-                    color = if (isPr) NztAccent else Color(0xCC10202B),
+                    color = if (isPr) NztAccent else NztSurface2,
                     shape = RoundedCornerShape(14.dp)
                 ) {
                     Text(
-                        if (isPr) "NEW PR" else "${states.count { it.done }}/$setCount",
+                        if (isPr) "PR" else "${states.count { it.done }}/$setCount",
                         Modifier.padding(horizontal = 10.dp, vertical = 7.dp),
                         color = if (isPr) Color.Black else NztText,
                         fontWeight = FontWeight.Black,
@@ -341,10 +353,8 @@ private fun V7ExerciseCard(
                     )
                 }
             }
+            HorizontalDivider(color = NztLine.copy(alpha = .65f))
             Column(Modifier.padding(14.dp)) {
-                Text("${index + 1}. ${exercise.name}", fontSize = 21.sp, fontWeight = FontWeight.Black)
-                Text("${exercise.target} • ${exercise.restSeconds}s rest", color = NztMuted, fontSize = 12.sp)
-                Spacer(Modifier.height(10.dp))
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     V7InfoPill("PREVIOUS", previousSummary(store, exercise.name), Modifier.weight(1f))
                     V7InfoPill("BEST e1RM", store.bestE1rm(exercise.name).takeIf { it > 0 }?.let { "${it.roundToInt()} kg" } ?: "—", Modifier.weight(1f))
@@ -610,13 +620,13 @@ private fun setVolume(state: V7SetState): Double {
 
 private fun progressionSuggestion(states: List<V7SetState>): String {
     val done = states.filter { it.done }
-    if (done.isEmpty()) return "NEXT: complete the prescribed work with clean technique"
+    if (done.isEmpty()) return "ДАЛЬШЕ: выполни назначенный объём с чистой техникой"
     val averageRir = done.map { it.rir }.average()
     return when {
-        done.size == states.size && averageRir >= 3.0 -> "NEXT: increase load 2–5% or choose a harder variation"
-        done.size == states.size && averageRir >= 1.5 -> "NEXT: keep load and add reps before increasing weight"
-        averageRir < 1.0 -> "NEXT: keep or reduce load; protect technique and recovery"
-        else -> "NEXT: complete all work sets before progressing"
+        done.size == states.size && averageRir >= 3.0 -> "ДАЛЬШЕ: увеличь нагрузку на 2–5% или выбери более сложный вариант"
+        done.size == states.size && averageRir >= 1.5 -> "ДАЛЬШЕ: сохрани вес и сначала добавь повторения"
+        averageRir < 1.0 -> "ДАЛЬШЕ: сохрани или снизь нагрузку, приоритет — техника и восстановление"
+        else -> "ДАЛЬШЕ: выполни все рабочие подходы перед прогрессией"
     }
 }
 

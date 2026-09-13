@@ -31,4 +31,11 @@ new = '''private fun v13Visual(name:String,cardio:Boolean,sessionType:String):V1
 if old in s:
     s = s.replace(old, new)
 p.write_text(s, encoding='utf-8')
+
+# Keep the helper API scoped to the module because V10Book is internal.
+p = Path('app/src/main/java/com/nzt365/app/V12Reader.kt')
+s = p.read_text(encoding='utf-8')
+s = s.replace('fun intent(context: Context, book: V10Book)', 'internal fun intent(context: Context, book: V10Book)')
+p.write_text(s, encoding='utf-8')
+
 print('v14 product polish applied')

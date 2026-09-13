@@ -15,6 +15,9 @@ jobs:
       - name: Apply final product routes
         run: python tools/v13_routes.py
 
+      - name: Apply v14 UI polish
+        run: python tools/v14_polish.py
+
       - name: Apply stable compile fixes
         run: python tools/v13_compile_fix.py
 
